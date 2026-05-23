@@ -48,13 +48,13 @@ jobs:
           cache-to: type=gha,mode=max
 
   deploy-dev:
-    name: Deploy → Dev
+    name: Deploy a Dev
     needs: build-and-push
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
 
     steps:
-      - name: Disparar actualización en infra
+      - name: Disparar actualizacion en infra
         uses: peter-evans/repository-dispatch@v3
         with:
           token: ${{ secrets.INFRA_DISPATCH_TOKEN }}
@@ -68,14 +68,14 @@ jobs:
             }
 
   deploy-prod:
-    name: Deploy → Prod
+    name: Deploy a Prod
     needs: build-and-push
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     environment: production
 
     steps:
-      - name: Disparar actualización en infra
+      - name: Disparar actualizacion en infra
         uses: peter-evans/repository-dispatch@v3
         with:
           token: ${{ secrets.INFRA_DISPATCH_TOKEN }}

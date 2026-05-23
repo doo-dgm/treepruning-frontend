@@ -2,7 +2,7 @@
 <script setup lang="ts">
 import { onMounted, watch }    from 'vue'
 import { storeToRefs }         from 'pinia'
-import { useGestionStore }     from '@/presentation/stores/gestion'
+import { useGestionStore }     from '@/presentation/stores/gestion.store'
 import type { EntityType }     from '@/domain/gestion/GestionEntity'
 
 const store = useGestionStore()

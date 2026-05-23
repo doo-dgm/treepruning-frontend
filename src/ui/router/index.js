@@ -2,15 +2,15 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/presentation/stores/auth'
 
 // Layouts
-import AuthLayout from '@/layouts/AuthLayout.vue'
-import PrivateLayout from '@/layouts/PrivateLayout.vue'
+import AuthLayout from '@/ui/layouts/AuthLayout.vue'
+import PrivateLayout from '@/ui/layouts/PrivateLayout.vue'
 
 // Views
-import LoginView from '@/views/LoginView.vue'
-import Administration from '@/views/Administration.vue'
-import PruningManagement from '@/views/PruningManagement.vue'
-import PQR from '@/views/PQR.vue'
-import Statistics from '@/views/Statistics.vue'
+import LoginView from '@/ui/views/LoginView.vue'
+import GestionView from '@/ui/views/GestionView.vue'
+import PruningManagement from '@/ui/views/PruningManagement.vue'
+import PQR from '@/ui/views/PQR.vue'
+import Statistics from '@/ui/views/Statistics.vue'
 
 
 const routes = [
@@ -37,7 +37,7 @@ const routes = [
     children: [
       { path: 'administracion',
         name: 'administracion',
-        component: Administration,
+        component: GestionView,
         meta: {title: 'Administracion'}  },
       { path: 'podas',
         name: 'podas',

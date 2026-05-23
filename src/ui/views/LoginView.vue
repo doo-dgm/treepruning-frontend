@@ -1,7 +1,7 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { keycloakClient } from '@/infra/auth/Keycloakclient'
+import { keycloakClient } from '@/infra/auth/KeycloakClient'
 import logo from '@/assets/arbol.png'
 
 const router = useRouter()

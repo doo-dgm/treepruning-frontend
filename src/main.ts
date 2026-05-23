@@ -1,6 +1,6 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
-import { initializeKeycloak } from './infra/auth/Initializekeycloak'
+import { initializeKeycloak } from './infra/auth/InitializeKeycloak'
 import router from './ui/router'
 import App from './App.vue'
 

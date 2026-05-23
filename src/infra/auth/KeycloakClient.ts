@@ -1,5 +1,5 @@
 // src/infra/auth/keycloakClient.ts
-import { keycloakStorage } from './Keycloakstorage'
+import { keycloakStorage } from './keycloakStorage'
 
 const KC_URL    = import.meta.env.VITE_KEYCLOAK_URL
 const KC_REALM  = import.meta.env.VITE_KEYCLOAK_REALM

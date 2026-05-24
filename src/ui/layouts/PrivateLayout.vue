@@ -1,3 +1,7 @@
+<script setup lang="ts">
+import Sidebar from '@/ui/components/Sidebar.vue'
+</script>
+
 <template>
   <div class="private-layout">
     <Sidebar />
@@ -6,10 +10,6 @@
     </main>
   </div>
 </template>
-
-<script setup>
-import Sidebar from '@/ui/components/Sidebar.vue'
-</script>
 
 <style scoped>
 .private-layout {

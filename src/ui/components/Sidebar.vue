@@ -1,21 +1,31 @@
-<script setup>
-import { useRouter } from 'vue-router'
-import { useAuthStore } from '@/presentation/stores/auth'
+<!-- src/ui/components/SidebarNav.vue -->
+<script setup lang="ts">
+import { computed }       from 'vue'
+import { useRouter }      from 'vue-router'
+import { useI18n }        from 'vue-i18n'
+import { useAuthStore }   from '@/presentation/stores/auth'
+import { usePermissions } from '@/presentation/composables/usePermissions'
 import logo from '@/assets/arbol.png'
 
-const router = useRouter()
-const { logout } = useAuthStore()
+const { t }           = useI18n()
+const router          = useRouter()
+const { logout }      = useAuthStore()
+const { hasAnyRole }  = usePermissions()
 
 const nav = [
-  { to: '/administracion', label: 'Administración', icon: '🗂️' },
-  { to: '/podas',          label: 'Podas',           icon: '🌿' },
-  { to: '/pqr',            label: 'PQR',              icon: '📋' },
-  { to: '/estadisticas',   label: 'Estadísticas',    icon: '📊' },
+  { to: '/administracion', labelKey: 'nav.administration', icon: '🗂️', roles: ['gestion.read']     },
+  { to: '/podas',          labelKey: 'nav.prunings',       icon: '🌿', roles: ['prunings.read']     },
+  { to: '/pqr',            labelKey: 'nav.pqr',            icon: '📋', roles: ['pqrs.read']         },
+  { to: '/estadisticas',   labelKey: 'nav.statistics',     icon: '📊', roles: ['statistics.read']   },
 ]
 
-function handleLogout() {
-  logout()
-  router.push('/login')
+const visibleNav = computed(() =>
+  nav.filter(item => item.roles.length === 0 || hasAnyRole(...item.roles))
+)
+
+async function handleLogout() {
+  await logout()
+  router.push('/auth/login')
 }
 </script>
 
@@ -28,20 +38,20 @@ function handleLogout() {
 
     <nav class="sidebar__nav flex-grow-1">
       <router-link
-        v-for="item in nav"
+        v-for="item in visibleNav"
         :key="item.to"
         :to="item.to"
         class="sidebar__link"
         active-class="sidebar__link--active"
       >
         <span class="sidebar__icon">{{ item.icon }}</span>
-        {{ item.label }}
+        {{ t(item.labelKey) }}
       </router-link>
     </nav>
 
     <div class="sidebar__footer">
       <button class="sidebar__logout" @click="handleLogout">
-        Cerrar sesión
+        {{ t('auth.logout') }}
       </button>
     </div>
   </aside>

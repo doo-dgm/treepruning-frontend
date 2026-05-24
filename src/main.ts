@@ -1,6 +1,9 @@
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
-import { initializeKeycloak } from './infra/auth/InitializeKeycloak'
+import { initializeKeycloak } from '@/infra/auth/InitializeKeycloak'
+import { i18n } from './infra/i18n'
+import { VueReCaptcha } from 'vue-recaptcha-v3'
+
 import router from './ui/router'
 import App from './App.vue'
 
@@ -17,4 +20,12 @@ app.use(pinia)
 await initializeKeycloak()
 
 app.use(router)
+app.use(i18n)
+app.use(VueReCaptcha, {
+  siteKey: import.meta.env.VITE_RECAPTCHA_SITE_KEY,
+  loaderOptions: {
+    autoHideBadge: false
+  }
+})
+
 app.mount('#app')

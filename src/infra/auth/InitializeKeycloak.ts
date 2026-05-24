@@ -1,4 +1,4 @@
-import { keycloakClient } from './KeycloakClient'
+import { keycloakClient } from './keycloakClient'
 import { useAuthStore }   from '../../presentation/stores/auth'
 
 export async function initializeKeycloak() {

@@ -1,6 +1,6 @@
+export { pruningService } from './pruning.service'
 export { quadrilleService } from './quadrille.service'
 export { statusService } from './status.service'
 export { treeService } from './tree.service'
 export { pruningTypeService } from './pruningType.service'
-export { pruningService } from './pruning.service'
-export { pqrService } from './pqr.service'
+export { sectorService } from './sector.service'

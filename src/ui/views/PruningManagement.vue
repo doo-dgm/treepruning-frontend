@@ -1,164 +1,136 @@
-<script setup>
-import { ref, onMounted } from 'vue'
-import { statusService, treeService, quadrilleService, pruningTypeService, pruningService } from '@/data/services'
+<script setup lang="ts">
+import { onMounted }       from 'vue'
+import { storeToRefs }     from 'pinia'
+import { useI18n }         from 'vue-i18n'
+import { usePruningStore } from '@/presentation/stores/pruning.store'
+import PhotoCapture from '@/ui/components/PhotoCapture.vue'
 
-const statuses = ref([])
-const trees = ref([])
-const quadrilles = ref([])
-const pruningTypes = ref([])
-const prunings = ref([])
+const { t }   = useI18n()
+const store   = usePruningStore()
+const {
+  statuses, trees, quadrilles, pruningTypes, prunings, sectors, loadingTrees,
+  form,
+  loadingForm, loadingList, submitting, successMsg, errorMsg, uploadingPhoto
+} = storeToRefs(store)
 
-const loadingForm = ref(false)
-const loadingList = ref(false)
-const submitting = ref(false)
-const successMsg = ref(null)
-const errorMsg = ref(null)
+console.log('PruningManagement mounted, store refs:', {
 
-const form = ref({
-  status: '',
-  plannedDate: '',
-  executedDate: '',
-  tree: '',
-  quadrille: '',
-  type: '',
-  photographicRecordPath: '',
-  observations: '',
+  prunings: prunings,
 })
-
-const labelOf = (list, id, field) => {
-  const item = list.find((i) => i.id === id)
-  return item ? (item[field] ?? item.id) : id
-}
-
-onMounted(async () => {
-  loadingForm.value = true
-  loadingList.value = true
-  try {
-    const [s, t, q, pt, p] = await Promise.all([
-      statusService.getAll(),
-      treeService.getAll(),
-      quadrilleService.getAll(),
-      pruningTypeService.getAll(),
-      pruningService.getAll(),
-    ])
-    statuses.value = s.data ?? []
-    trees.value = t.data ?? []
-    quadrilles.value = q.data ?? []
-    pruningTypes.value = pt.data ?? []
-    prunings.value = p.data ?? []
-  } catch (err) {
-    errorMsg.value = `Error al cargar datos: ${err.message}`
-  } finally {
-    loadingForm.value = false
-    loadingList.value = false
-  }
-})
-
-const refreshPrunings = async () => {
-  const res = await pruningService.getAll()
-  prunings.value = res.data ?? []
-}
-
-const submit = async () => {
-  successMsg.value = null
-  errorMsg.value = null
-  submitting.value = true
-  try {
-    const payload = {
-      status: form.value.status || null,
-      plannedDate: form.value.plannedDate || null,
-      executedDate: form.value.executedDate || null,
-      tree: form.value.tree || null,
-      quadrille: form.value.quadrille || null,
-      type: form.value.type || null,
-      photographicRecordPath: form.value.photographicRecordPath || null,
-      observations: form.value.observations || null,
-    }
-    await pruningService.schedule(payload)
-    successMsg.value = 'Poda programada exitosamente.'
-    form.value = { status: '', plannedDate: '', executedDate: '', tree: '', quadrille: '', type: '', photographicRecordPath: '', observations: '' }
-    await refreshPrunings()
-  } catch (err) {
-    errorMsg.value = `Error al programar poda: ${err.message}`
-  } finally {
-    submitting.value = false
-  }
-}
+onMounted(() => store.loadFormData())
 </script>
 
 <template>
   <div class="container mt-4">
-    <h4 class="mb-4">Gestión de Podas</h4>
+    <h4 class="mb-4">{{ t('pruning.title') }}</h4>
 
-    <!-- ── Formulario ── -->
     <div class="card mb-4">
-      <div class="card-header fw-semibold">Nueva poda</div>
+      <div class="card-header fw-semibold">{{ t('pruning.newPruning') }}</div>
       <div class="card-body">
+
         <div v-if="loadingForm" class="text-center py-3">
-          <div class="spinner-border text-success" role="status"></div>
+          <div class="spinner-border text-success" role="status">
+            <span class="visually-hidden">{{ t('common.loading') }}</span>
+          </div>
         </div>
 
-        <form v-else @submit.prevent="submit">
+        <form v-else @submit.prevent="store.submit">
           <div v-if="successMsg" class="alert alert-success py-2">{{ successMsg }}</div>
-          <div v-if="errorMsg" class="alert alert-danger py-2">{{ errorMsg }}</div>
+          <div v-if="errorMsg"   class="alert alert-danger  py-2">{{ errorMsg }}</div>
 
           <div class="row g-3">
             <div class="col-md-6">
-              <label class="form-label">Estado</label>
+              <label class="form-label">{{ t('pruning.form.status') }}</label>
               <select v-model="form.status" class="form-select" required>
-                <option value="" disabled>Seleccione un estado</option>
-                <option v-for="s in statuses" :key="s.id" :value="s.id">{{ s.name ?? s.nombre ?? s.id }}</option>
+                <option value="" disabled>{{ t('pruning.form.statusPh') }}</option>
+                <option v-for="s in statuses" :key="s.id" :value="s.id">
+                  {{ s.name ?? s.nombre ?? s.id }}
+                </option>
               </select>
             </div>
 
             <div class="col-md-6">
-              <label class="form-label">Tipo de poda</label>
+              <label class="form-label">{{ t('pruning.form.type') }}</label>
               <select v-model="form.type" class="form-select" required>
-                <option value="" disabled>Seleccione un tipo</option>
-                <option v-for="t in pruningTypes" :key="t.id" :value="t.id">{{ t.name ?? t.nombre ?? t.id }}</option>
+                <option value="" disabled>{{ t('pruning.form.typePh') }}</option>
+                <option v-for="pt in pruningTypes" :key="pt.id" :value="pt.id">
+                  {{ pt.name ?? pt.nombre ?? pt.id }}
+                </option>
               </select>
             </div>
 
             <div class="col-md-6">
-              <label class="form-label">Árbol</label>
-              <select v-model="form.tree" class="form-select" required>
-                <option value="" disabled>Seleccione un árbol</option>
-                <option v-for="t in trees" :key="t.id" :value="t.id">{{ t.species ?? t.especie ?? t.id }}</option>
+              <label class="form-label">{{ t('pruning.form.sector') }}</label>
+              <select
+                v-model="form.sector"
+                class="form-select"
+                required
+                @change="store.loadTreesBySector(form.sector)"
+              >
+                <option value="" disabled>{{ t('pruning.form.sectorPh') }}</option>
+                <option v-for="s in sectors" :key="s.id" :value="s.id">
+                  {{ s.name ?? s.id }}
+                </option>
               </select>
             </div>
 
             <div class="col-md-6">
-              <label class="form-label">Cuadrilla</label>
+              <label class="form-label">{{ t('pruning.form.tree') }}</label>
+              <select
+                v-model="form.tree"
+                class="form-select"
+                required
+                :disabled="!form.sector || loadingTrees"
+              >
+                <option value="" disabled>
+                  {{ loadingTrees ? t('common.loading') : t('pruning.form.treePh') }}
+                </option>
+                <option v-for="tr in trees" :key="tr.id" :value="tr.id">
+                  {{ tr.family?.commonName + ' ( Lat ' + tr.latitude + ', Lon ' + tr.longitude + ')' ?? tr.id }}
+                </option>
+              </select>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label">{{ t('pruning.form.quadrille') }}</label>
               <select v-model="form.quadrille" class="form-select" required>
-                <option value="" disabled>Seleccione una cuadrilla</option>
-                <option v-for="q in quadrilles" :key="q.id" :value="q.id">{{ q.name ?? q.nombreCuadrilla ?? q.id }}</option>
+                <option value="" disabled>{{ t('pruning.form.quadrillePh') }}</option>
+                <option v-for="q in quadrilles" :key="q.id" :value="q.id">
+                  {{ q.name ?? q.quadrilleName ?? q.id }}
+                </option>
               </select>
             </div>
 
             <div class="col-md-6">
-              <label class="form-label">Fecha planeada</label>
+              <label class="form-label">{{ t('pruning.form.plannedDate') }}</label>
               <input v-model="form.plannedDate" type="date" class="form-control" required />
             </div>
 
             <div class="col-md-6">
-              <label class="form-label">Fecha ejecutada <span class="text-muted">(opcional)</span></label>
+              <label class="form-label">
+                {{ t('pruning.form.executedDateOptional') }}
+              </label>
               <input v-model="form.executedDate" type="date" class="form-control" />
             </div>
 
             <div class="col-12">
-              <label class="form-label">Ruta fotográfica <span class="text-muted">(opcional)</span></label>
-              <input v-model="form.photographicRecordPath" type="text" class="form-control" placeholder="/fotos/poda-001.jpg" />
+              <label class="form-label">{{ t('pruning.form.photoOptional') }}</label>
+              <PhotoCapture
+                v-model="form.photographicRecordPath"
+                :uploading="uploadingPhoto"
+                @capture="store.uploadPhoto"
+              />
             </div>
 
             <div class="col-12">
-              <label class="form-label">Observaciones <span class="text-muted">(opcional)</span></label>
+              <label class="form-label">{{ t('pruning.form.obsOptional') }}</label>
               <textarea v-model="form.observations" class="form-control" rows="2"></textarea>
             </div>
 
             <div class="col-12">
               <button type="submit" class="btn btn-success" :disabled="submitting">
                 <span v-if="submitting" class="spinner-border spinner-border-sm me-1"></span>
-                Programar poda
+                {{ submitting ? t('pruning.scheduling') : t('pruning.schedule') }}
               </button>
             </div>
           </div>
@@ -166,45 +138,50 @@ const submit = async () => {
       </div>
     </div>
 
-    <!-- ── Lista de podas ── -->
     <div class="card">
-      <div class="card-header fw-semibold">Podas registradas</div>
+      <div class="card-header fw-semibold">{{ t('pruning.registered') }}</div>
       <div class="card-body p-0">
+
         <div v-if="loadingList" class="text-center py-4">
-          <div class="spinner-border text-success" role="status"></div>
+          <div class="spinner-border text-success" role="status">
+            <span class="visually-hidden">{{ t('common.loading') }}</span>
+          </div>
         </div>
 
         <div v-else-if="prunings.length === 0" class="text-muted text-center py-4">
-          No hay podas registradas.
+          {{ t('pruning.noRecords') }}
         </div>
 
         <div v-else class="table-responsive">
           <table class="table table-striped table-hover mb-0">
             <thead class="table-dark">
               <tr>
-                <th>Fecha planeada</th>
-                <th>Fecha ejecutada</th>
-                <th>Estado</th>
-                <th>Árbol</th>
-                <th>Cuadrilla</th>
-                <th>Tipo</th>
-                <th>Observaciones</th>
+                <th>{{ t('pruning.table.plannedDate')  }}</th>
+                <th>{{ t('pruning.table.executedDate') }}</th>
+                <th>{{ t('pruning.table.status')       }}</th>
+                <th>{{ t('pruning.table.tree')         }}</th>
+                <th>{{ t('pruning.table.quadrille')    }}</th>
+                <th>{{ t('pruning.table.type')         }}</th>
+                <th>{{ t('pruning.table.sector')       }}</th>
+                <th>{{ t('pruning.table.observations') }}</th>
               </tr>
             </thead>
             <tbody>
               <tr v-for="p in prunings" :key="p.id">
-                <td>{{ p.plannedDate ?? '—' }}</td>
-                <td>{{ p.executedDate ?? '—' }}</td>
-                <td>{{ labelOf(statuses, p.status, 'name') }}</td>
-                <td>{{ labelOf(trees, p.tree, 'species') }}</td>
-                <td>{{ labelOf(quadrilles, p.quadrille, 'name') }}</td>
-                <td>{{ labelOf(pruningTypes, p.type, 'name') }}</td>
-                <td>{{ p.observations || '—' }}</td>
+                <td>{{ p.plannedDate              ?? t('common.empty') }}</td>
+                <td>{{ p.executedDate             ?? t('common.empty') }}</td>
+                <td>{{ p.status?.name             ?? t('common.empty') }}</td>
+                <td>{{ p.tree?.family?.commonName ?? t('common.empty') }}</td>
+                <td>{{ p.quadrille?.quadrilleName ?? t('common.empty') }}</td>
+                <td>{{ p.type?.name               ?? t('common.empty') }}</td>
+                <td>{{ p.sector?.name             ?? t('common.empty') }}</td>
+                <td>{{ p.observations             || t('common.empty') }}</td>
               </tr>
             </tbody>
           </table>
         </div>
       </div>
     </div>
+
   </div>
 </template>

@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.7
 
-# ─── Build stage ─────────────────────────────────────────────────────────────
+# ----- Build stage -----
 FROM node:22-alpine AS build
 WORKDIR /app
 
@@ -8,17 +8,17 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
 
-# Código fuente y build
+# Codigo fuente y build
 COPY . .
 RUN npm run build
 
-# ─── Runtime stage ───────────────────────────────────────────────────────────
+# ----- Runtime stage -----
 FROM nginx:1.27-alpine AS runtime
 
 # Config SPA (fallback a index.html para rutas de Vue Router)
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Artefactos estáticos
+# Artefactos estaticos
 COPY --from=build /app/dist /usr/share/nginx/html
 
 EXPOSE 80

@@ -8,7 +8,10 @@ on:
   workflow_dispatch:
 
 env:
-  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/tree-pruning-frontend
+  # Renombrado de tree-pruning-frontend -> treepruning-frontend para alinear
+  # con el nombre del repo y crear un namespace GHCR limpio (el anterior
+  # tenia 403 en cross-package blob mount que no se podia destrabar).
+  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/treepruning-frontend
 
 jobs:
 
@@ -46,15 +49,22 @@ jobs:
             ${{ env.IMAGE_NAME }}:${{ github.ref == 'refs/heads/main' && 'latest' || 'dev' }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          # Desactiva los attestations de provenance/SBOM. Con mode=max generan
+          # blobs adicionales que GHCR intenta resolver via "cross-repo mount"
+          # cuando ya hay capas compartidas en otros packages del owner. Si el
+          # GITHUB_TOKEN no tiene permiso write sobre esos otros packages,
+          # responde 403 al HEAD del blob y aborta el push.
+          provenance: false
+          sbom: false
 
   deploy-dev:
-    name: Deploy → Dev
+    name: Deploy a Dev
     needs: build-and-push
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
 
     steps:
-      - name: Disparar actualización en infra
+      - name: Disparar actualizacion en infra
         uses: peter-evans/repository-dispatch@v3
         with:
           token: ${{ secrets.INFRA_DISPATCH_TOKEN }}
@@ -68,14 +78,14 @@ jobs:
             }
 
   deploy-prod:
-    name: Deploy → Prod
+    name: Deploy a Prod
     needs: build-and-push
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     environment: production
 
     steps:
-      - name: Disparar actualización en infra
+      - name: Disparar actualizacion en infra
         uses: peter-evans/repository-dispatch@v3
         with:
           token: ${{ secrets.INFRA_DISPATCH_TOKEN }}

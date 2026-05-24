@@ -4,6 +4,6 @@
 
 <template>
   <div class="container mt-4">
-    <h4 class="mb-4">Gestión de PQR</h4>
+    <h4 class="mb-4">Estadisticas</h4>
   </div>
 </template>

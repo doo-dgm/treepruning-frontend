@@ -1,33 +1,41 @@
-<script setup>
-import { ref } from 'vue'
+<script setup lang="ts">
+import { ref }                from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { keycloakClient } from '@/infra/auth/KeycloakClient'
-import logo from '@/assets/arbol.png'
+import { useAuthStore }       from '@/presentation/stores/auth'
+import logo                   from '@/assets/arbol.png'
 
-const router = useRouter()
-const route = useRoute()
+const router    = useRouter()
+const route     = useRoute()
+const authStore = useAuthStore()
 
 const username = ref('')
 const password = ref('')
-const error = ref(null)
+const loading  = ref(false)
+const error    = ref<string | null>(null)
 
 async function handleLogin() {
   error.value = null
+
   if (!username.value || !password.value) {
     error.value = 'Ingresa usuario y contraseña.'
     return
   }
 
-  const result = await keycloakClient.login({
-    username: username.value,
-    password: password.value,
-  })
+  loading.value = true
+  try {
+    const result = await authStore.login({
+      username: username.value,
+      password: password.value,
+    })
 
-  if (result.success) {
-    const redirect = route.query.redirect || '/administracion'
-    router.push(redirect)
-  } else {
-    error.value = result.message
+    if (result.success) {
+      const redirect = (route.query.redirect as string) || '/administracion'
+      router.push(redirect)
+    } else {
+      error.value = result.message ?? 'Error de autenticación.'
+    }
+  } finally {
+    loading.value = false
   }
 }
 </script>

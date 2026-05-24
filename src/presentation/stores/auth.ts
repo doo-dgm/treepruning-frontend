@@ -1,6 +1,6 @@
 import { defineStore }    from 'pinia'
 import { ref, computed }  from 'vue'
-import { keycloakClient } from '@/infra/auth/keycloakClient'
+import { keycloakClient } from '@/infra/auth/KeycloakClient'
 import { parseRoles }     from '@/infra/auth/parseRoles'
 import { getRecaptchaToken } from '@/infra/recaptcha/recaptcha'
 

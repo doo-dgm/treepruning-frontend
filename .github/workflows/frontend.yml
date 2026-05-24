@@ -8,7 +8,10 @@ on:
   workflow_dispatch:
 
 env:
-  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/tree-pruning-frontend
+  # Renombrado de tree-pruning-frontend -> treepruning-frontend para alinear
+  # con el nombre del repo y crear un namespace GHCR limpio (el anterior
+  # tenia 403 en cross-package blob mount que no se podia destrabar).
+  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/treepruning-frontend
 
 jobs:
 
@@ -53,6 +56,32 @@ jobs:
           # responde 403 al HEAD del blob y aborta el push.
           provenance: false
           sbom: false
+
+  sonar-analysis:
+    name: SonarQube Analysis
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Definir project key por rama
+        run: |
+          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            echo "SONAR_KEY=TreePruning-Frontend" >> $GITHUB_ENV
+          else
+            echo "SONAR_KEY=TreePruning-Frontend-Dev" >> $GITHUB_ENV
+          fi
+
+      - name: SonarQube Scan
+        uses: sonarsource/sonarqube-scan-action@v5
+        with:
+          args: -Dsonar.projectKey=${{ env.SONAR_KEY }}
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: https://sonar.treepruning.org
 
   deploy-dev:
     name: Deploy a Dev

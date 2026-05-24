@@ -4,13 +4,14 @@ import { storeToRefs }     from 'pinia'
 import { useI18n }         from 'vue-i18n'
 import { usePruningStore } from '@/presentation/stores/pruning.store'
 import PhotoCapture from '@/ui/components/PhotoCapture.vue'
+import TreeMap from '@/ui/components/TreeMap.vue'
 
 const { t }   = useI18n()
 const store   = usePruningStore()
 const {
   statuses, trees, quadrilles, pruningTypes, prunings, sectors, loadingTrees,
   form,
-  loadingForm, loadingList, submitting, successMsg, errorMsg, uploadingPhoto
+  loadingForm, loadingList, submitting, successMsg, errorMsg, uploadingPhoto, selectedTreeCoords
 } = storeToRefs(store)
 
 console.log('PruningManagement mounted, store refs:', {
@@ -81,14 +82,23 @@ onMounted(() => store.loadFormData())
                 class="form-select"
                 required
                 :disabled="!form.sector || loadingTrees"
+                @change="store.selectTree(form.tree)"
               >
                 <option value="" disabled>
                   {{ loadingTrees ? t('common.loading') : t('pruning.form.treePh') }}
                 </option>
                 <option v-for="tr in trees" :key="tr.id" :value="tr.id">
-                  {{ tr.family?.commonName + ' ( Lat ' + tr.latitude + ', Lon ' + tr.longitude + ')' ?? tr.id }}
+                  {{ tr.family?.commonName + ' ( Lat ' + tr.latitude + ', Lon ' + tr.longitude + ')' }}
                 </option>
               </select>
+            </div>
+
+            <div class="col-12">
+              <TreeMap
+                :latitude="selectedTreeCoords?.lat ?? null"
+                :longitude="selectedTreeCoords?.lng ?? null"
+                :label="trees.find(t => t.id === form.tree)?.family?.commonName"
+              />
             </div>
 
             <div class="col-md-6">

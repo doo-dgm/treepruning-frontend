@@ -1,8 +1,9 @@
-import type { Pruning, LookupItem, PruningForm } from './PruningEntity'
+// src/domain/pruning/PruningRepository.ts
+import type { Pruning, LookupItem, PruningForm, TreeLookupItem } from './PruningEntity'
 
 export interface PruningFormData {
   statuses:     LookupItem[]
-  trees:        LookupItem[]
+  trees:        TreeLookupItem[]
   quadrilles:   LookupItem[]
   pruningTypes: LookupItem[]
   prunings:     Pruning[]
@@ -10,9 +11,9 @@ export interface PruningFormData {
 }
 
 export interface PruningRepository {
-  getFormData():           Promise<PruningFormData>
-  getTreesBySector(sectorId: string): Promise<LookupItem[]>
-  getPrunings():           Promise<Pruning[]>
-  schedule(form: PruningForm): Promise<void>
-  uploadPhoto(file: File): Promise<string>
+  getFormData():                      Promise<PruningFormData>
+  getTreesBySector(sectorId: string): Promise<TreeLookupItem[]>  // ← solo uno
+  getPrunings():                      Promise<Pruning[]>
+  schedule(form: PruningForm):        Promise<void>
+  uploadPhoto(file: File):            Promise<string>
 }

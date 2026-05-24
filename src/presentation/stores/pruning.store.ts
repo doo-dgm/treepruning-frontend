@@ -5,19 +5,21 @@ import {
   schedulePruningUseCase,
   getPruningsUseCase,
 } from '@/data/composition/pruning.composition'
+
 import { emptyForm }                             from '@/domain/pruning/PruningEntity'
-import type { Pruning, LookupItem, PruningForm } from '@/domain/pruning/PruningEntity'
+import type { Pruning, LookupItem, PruningForm, TreeLookupItem } from '@/domain/pruning/PruningEntity'
 import { getTreesBySectorUseCase } from '@/data/composition/pruning.composition'
 import { uploadPhotoUseCase } from '@/data/composition/pruning.composition'
 
 export const usePruningStore = defineStore('pruning', () => {
 
   const statuses     = ref<LookupItem[]>([])
-  const trees        = ref<LookupItem[]>([])
+  const trees = ref<TreeLookupItem[]>([])
   const quadrilles   = ref<LookupItem[]>([])
   const pruningTypes = ref<LookupItem[]>([])
   const prunings     = ref<Pruning[]>([])
   const sectors      = ref<LookupItem[]>([])
+  const selectedTreeCoords = ref<{ lat: number; lng: number } | null>(null)
 
   const form = ref<PruningForm>(emptyForm())
 
@@ -108,10 +110,21 @@ export const usePruningStore = defineStore('pruning', () => {
     }
   }
 
+  function selectTree(treeId: string) {
+    const tree = trees.value.find(t => t.id === treeId)
+    if (tree?.latitude && tree?.longitude) {
+      selectedTreeCoords.value = { lat: tree.latitude, lng: tree.longitude }
+      console.log('coords guardadas →', selectedTreeCoords.value)
+    } else {
+      selectedTreeCoords.value = null
+    }
+  }
+
   return {
     statuses, trees, quadrilles, pruningTypes, prunings, sectors,
     form,
     loadingForm, loadingList, submitting, loadingTrees, successMsg, errorMsg,
+    selectedTreeCoords, selectTree,
     loadFormData, loadTreesBySector, submit, uploadingPhoto, uploadPhoto
   }
 })

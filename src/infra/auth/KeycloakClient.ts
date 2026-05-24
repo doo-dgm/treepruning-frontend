@@ -33,7 +33,7 @@ function scheduleRefresh(expiresInSeconds: number) {
 
 export const keycloakClient = {
 
-  async login(credentials: { username: string; password: string }): Promise<LoginResult> {
+  async login(credentials: { username: string; password: string; recaptchaToken?: string }): Promise<LoginResult> {
     const response = await fetch(tokenEndpoint, {
       method:  'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },

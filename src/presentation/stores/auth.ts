@@ -2,6 +2,8 @@ import { defineStore }    from 'pinia'
 import { ref, computed }  from 'vue'
 import { keycloakClient } from '@/infra/auth/KeycloakClient'
 import { parseRoles }     from '@/infra/auth/parseRoles'
+import { getRecaptchaToken } from '@/infra/recaptcha/recaptcha'
+import { useNotifications } from '../composables/useNotifications'
 
 export interface AuthSession {
   token:        string
@@ -14,6 +16,9 @@ export const useAuthStore = defineStore('auth', () => {
   const token        = ref<string | null>(null)
   const refreshToken = ref<string | null>(null)
   const user         = ref<Record<string, unknown> | null>(null)
+
+  const loginAttempts  = ref(0)
+  const requireCaptcha = computed(() => loginAttempts.value >= 1)
 
   // ── Roles extraídos del JWT ──────────────────────────
   const roles = computed<string[]>(() =>
@@ -35,19 +40,15 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
 
-  async function login(credentials: { username: string; password: string }) {
-    const result = await keycloakClient.login(credentials)
-    if (result.success && result.session) {
-      setSession(result.session)
-    }
-    return result
-  }
-
   // ── Acción logout ────────────────────────────────────
   async function logout() {
+    const { clearNotifications } = useNotifications()
+    await clearNotifications()
     await keycloakClient.logout()
     clearSession()
   }
+
+
 
   // ── Mutaciones internas ──────────────────────────────
   function setSession(session: AuthSession) {
@@ -62,9 +63,36 @@ export const useAuthStore = defineStore('auth', () => {
     user.value         = null
   }
 
+  async function login(credentials: { username: string; password: string }) {
+  let recaptchaToken: string | undefined
+
+  // A partir del segundo intento solicita reCAPTCHA
+  if (requireCaptcha.value) {
+    try {
+      recaptchaToken = await getRecaptchaToken('login')
+    } catch {
+      loginAttempts.value = 0
+      return { success: false, message: 'Verificación de seguridad no disponible. Intenta de nuevo.' }
+    }
+  }
+
+  const result = await keycloakClient.login({ ...credentials, recaptchaToken })
+
+  if (result.success && result.session) {
+    setSession(result.session!)
+    loginAttempts.value = 0
+    const { initNotifications } = useNotifications()
+    await initNotifications()
+  } else {
+    loginAttempts.value++
+  }
+  console.log('Login result:', result)
+  return result
+}
+
   return {
     token, refreshToken, user, roles,
-    isAuthenticated,
+    isAuthenticated, requireCaptcha,
     hasRole, hasAnyRole, hasAllRoles,
     login, logout,
     setSession, clearSession,

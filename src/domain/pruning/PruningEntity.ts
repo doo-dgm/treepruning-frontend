@@ -25,6 +25,15 @@ export interface Pruning {
   sector:                SectorRef
 }
 
+export interface TreeLookupItem {
+  id:        string
+  latitude:  number
+  longitude: number
+  family?:   { commonName: string; scientificName: string }
+  sector?:   { id: string; name: string }
+  [key: string]: unknown
+}
+
 export interface LookupItem {
   id:    string
   name?: string

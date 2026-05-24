@@ -34,7 +34,7 @@ async function handleLogin() {
     })
 
     if (result.success) {
-      const redirect = (route.query.redirect as string) || '/home'
+      const redirect = (route.query.redirect as string) || '/'
       router.push(redirect)
     } else {
       error.value = result.message ?? t('auth.error')

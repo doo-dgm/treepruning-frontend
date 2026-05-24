@@ -1,5 +1,4 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import type { NavigationGuardNext, RouteLocationNormalized } from 'vue-router'
 import { useAuthStore } from '@/presentation/stores/auth'
 
 // Layouts
@@ -45,10 +44,10 @@ const routes = [
     meta:      { requiresAuth: true },
     children: [
       {
-        path:      '',           // ← ruta raíz '/'
+        path:      '',
         name:      'home',
-        component: HomeView,     // o redirige al primer módulo que tenga permiso
-        meta:      { title: 'Inicio' },  // ← sin roles
+        component: HomeView,
+        meta:      { requiresAuth: true, title: 'Inicio' },
       },
       {
         path:      'administracion',
@@ -80,7 +79,7 @@ const routes = [
   // 404
   {
     path:     '/:pathMatch(.*)*',
-    redirect: '/home',        // ← cambia a home
+    redirect: '/',        // ← cambia a home
   },
 ]
 
@@ -98,12 +97,14 @@ router.beforeEach((to, _from, next) => {
   }
 
   if (to.meta.requiresGuest && auth.isAuthenticated) {
-    return next({ name: 'home' })     // ← cambia a home
+    return next({ name: 'home' })
   }
 
   const requiredRoles = to.meta.roles as string[] | undefined
   if (requiredRoles?.length && !auth.hasAnyRole(...requiredRoles)) {
-    return next({ name: 'home' })     // ← cambia a home
+    if (to.name !== 'home') {
+      return next({ name: 'home' })
+    }
   }
 
   next()

@@ -3,6 +3,7 @@ import { ref, computed }  from 'vue'
 import { keycloakClient } from '@/infra/auth/KeycloakClient'
 import { parseRoles }     from '@/infra/auth/parseRoles'
 import { getRecaptchaToken } from '@/infra/recaptcha/recaptcha'
+import { useNotifications } from '../composables/useNotifications'
 
 export interface AuthSession {
   token:        string
@@ -41,6 +42,8 @@ export const useAuthStore = defineStore('auth', () => {
 
   // ── Acción logout ────────────────────────────────────
   async function logout() {
+    const { clearNotifications } = useNotifications()
+    await clearNotifications()
     await keycloakClient.logout()
     clearSession()
   }
@@ -61,24 +64,31 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function login(credentials: { username: string; password: string }) {
-    let recaptchaToken: string | undefined
+  let recaptchaToken: string | undefined
 
-    // A partir del segundo intento exige reCAPTCHA
-    if (requireCaptcha.value) {
+  // A partir del segundo intento solicita reCAPTCHA
+  if (requireCaptcha.value) {
+    try {
       recaptchaToken = await getRecaptchaToken('login')
+    } catch {
+      loginAttempts.value = 0
+      return { success: false, message: 'Verificación de seguridad no disponible. Intenta de nuevo.' }
     }
-
-    const result = await keycloakClient.login({ ...credentials, recaptchaToken })
-
-    if (result.success) {
-      loginAttempts.value = 0   // resetea al lograr entrar
-      setSession(result.session!)
-    } else {
-      loginAttempts.value++     // incrementa en cada fallo
-    }
-
-    return result
   }
+
+  const result = await keycloakClient.login({ ...credentials, recaptchaToken })
+
+  if (result.success && result.session) {
+    setSession(result.session!)
+    loginAttempts.value = 0
+    const { initNotifications } = useNotifications()
+    await initNotifications()
+  } else {
+    loginAttempts.value++
+  }
+
+  return result
+}
 
   return {
     token, refreshToken, user, roles,

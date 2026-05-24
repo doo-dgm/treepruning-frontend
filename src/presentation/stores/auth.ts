@@ -86,7 +86,7 @@ export const useAuthStore = defineStore('auth', () => {
   } else {
     loginAttempts.value++
   }
-  console.log('Login result:', result)
+
   return result
 }
 

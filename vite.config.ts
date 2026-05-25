@@ -19,7 +19,7 @@ export default defineConfig(({ mode }) => {
     server: {
       proxy: {
         '/api': {
-          target: 'https://api.treepruning.org',
+          target: env.VITE_API_URL,
           changeOrigin: true,
         },
       },

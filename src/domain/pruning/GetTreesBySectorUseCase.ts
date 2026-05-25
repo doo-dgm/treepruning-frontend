@@ -1,5 +1,5 @@
 import type { PruningRepository } from './PruningRepository'
-import type { LookupItem, TreeLookupItem  }        from './PruningEntity'
+import type {  TreeLookupItem  }        from './PruningEntity'
 
 export class GetTreesBySectorUseCase {
   constructor(private readonly repo: PruningRepository) {}

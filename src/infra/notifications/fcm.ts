@@ -4,7 +4,7 @@ import { firebaseApp }                       from './firebase.config'
 
 const messaging = getMessaging(firebaseApp)
 
-// ── Solicita permiso y obtiene el FCM token ────────────
+
 export async function requestNotificationPermission(): Promise<string | null> {
   try {
     const permission = await Notification.requestPermission()
@@ -24,7 +24,7 @@ export async function requestNotificationPermission(): Promise<string | null> {
   }
 }
 
-// ── Escucha notificaciones cuando la app está en primer plano ──
+
 export function onForegroundMessage(callback: (payload: MessagePayload) => void) {
   return onMessage(messaging, callback)
 }

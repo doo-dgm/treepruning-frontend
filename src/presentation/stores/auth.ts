@@ -82,7 +82,7 @@ export const useAuthStore = defineStore('auth', () => {
     setSession(result.session!)
     loginAttempts.value = 0
     const { initNotifications } = useNotifications()
-    await initNotifications()
+    try { await initNotifications() } catch { /* no crítico */ }
   } else {
     loginAttempts.value++
   }

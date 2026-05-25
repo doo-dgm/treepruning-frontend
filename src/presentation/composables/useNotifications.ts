@@ -20,7 +20,11 @@ export function useNotifications() {
 
     fcmToken.value = token
 
-    await notificationService.registerToken(token)
+    try {
+      await notificationService.registerToken(token)
+    } catch {
+      return
+    }
 
     onForegroundMessage((payload) => {
       const notification: AppNotification = {

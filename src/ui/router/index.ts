@@ -79,7 +79,7 @@ const routes = [
   // 404
   {
     path:     '/:pathMatch(.*)*',
-    redirect: '/',        // ← cambia a home
+    redirect: '/',
   },
 ]
 

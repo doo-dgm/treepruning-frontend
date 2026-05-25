@@ -1,8 +1,9 @@
 import axios from 'axios'
 import { useAuthStore } from '@/presentation/stores/auth'
+import { config } from '@/infra/config'
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL,
+  baseURL: config.apiBaseUrl,    // ← usa config
   headers: { 'Content-Type': 'application/json' },
   timeout: 10000,
 })

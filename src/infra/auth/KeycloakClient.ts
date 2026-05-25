@@ -1,8 +1,9 @@
 // src/infra/auth/KeycloakClient.ts
 import { keycloakStorage } from './keycloakStorage'
+import { config } from '@/infra/config'
 
-const KC_ISSUER = import.meta.env.VITE_KEYCLOAK_ISSUER_URI
-const KC_CLIENT = import.meta.env.VITE_KEYCLOAK_CLIENT
+const KC_ISSUER = config.keycloakIssuerUri
+const KC_CLIENT = config.keycloakClient
 
 const tokenEndpoint  = `${KC_ISSUER}/protocol/openid-connect/token`
 const logoutEndpoint = `${KC_ISSUER}/protocol/openid-connect/logout`

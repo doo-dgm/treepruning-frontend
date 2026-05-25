@@ -13,10 +13,10 @@ const { logout }      = useAuthStore()
 const { hasAnyRole }  = usePermissions()
 
 const nav = [
-  { to: '/administracion', labelKey: 'nav.administration', icon: '🗂️', roles: ['gestion.read']     },
-  { to: '/podas',          labelKey: 'nav.prunings',       icon: '🌿', roles: ['prunings.read']     },
-  { to: '/pqr',            labelKey: 'nav.pqr',            icon: '📋', roles: ['pqrs.read']         },
-  { to: '/estadisticas',   labelKey: 'nav.statistics',     icon: '📊', roles: ['statistics.read']   },
+  { to: '/administracion', labelKey: 'nav.administration', icon: '🗂️', roles: ['MANAGER', 'ADMIN']           },
+  { to: '/podas',          labelKey: 'nav.prunings',       icon: '🌿', roles: ['MANAGER', 'ADMIN']           },
+  { to: '/pqr',            labelKey: 'nav.pqr',            icon: '📋', roles: ['PERSON', 'MANAGER', 'ADMIN'] },
+  { to: '/estadisticas',   labelKey: 'nav.statistics',     icon: '📊', roles: ['MANAGER', 'ADMIN']           },
 ]
 
 const visibleNav = computed(() =>

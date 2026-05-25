@@ -6,10 +6,8 @@ const router = useRouter()
 const { hasAnyRole } = usePermissions()
 
 // Redirige al primer módulo con permiso
-if      (hasAnyRole('prunings.read'))  router.replace({ name: 'podas' })
-else if (hasAnyRole('pqrs.read'))      router.replace({ name: 'pqr' })
-else if (hasAnyRole('statistics.read')) router.replace({ name: 'estadisticas' })
-else if (hasAnyRole('gestion.read'))   router.replace({ name: 'administracion' })
+if      (hasAnyRole('MANAGER', 'ADMIN')) router.replace({ name: 'podas' })
+else if (hasAnyRole('PERSON'))           router.replace({ name: 'pqr' })
 </script>
 
 <template>

@@ -1,12 +1,11 @@
 // src/infra/auth/KeycloakClient.ts
 import { keycloakStorage } from './keycloakStorage'
 
-const KC_URL    = import.meta.env.VITE_KEYCLOAK_URL
-const KC_REALM  = import.meta.env.VITE_KEYCLOAK_REALM
+const KC_ISSUER = import.meta.env.VITE_KEYCLOAK_ISSUER_URI
 const KC_CLIENT = import.meta.env.VITE_KEYCLOAK_CLIENT
 
-const tokenEndpoint  = `${KC_URL}/realms/${KC_REALM}/protocol/openid-connect/token`
-const logoutEndpoint = `${KC_URL}/realms/${KC_REALM}/protocol/openid-connect/logout`
+const tokenEndpoint  = `${KC_ISSUER}/protocol/openid-connect/token`
+const logoutEndpoint = `${KC_ISSUER}/protocol/openid-connect/logout`
 
 
 export interface AuthSession {

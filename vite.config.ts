@@ -19,7 +19,7 @@ export default defineConfig(({ mode }) => {
     server: {
       proxy: {
         '/api': {
-          target: 'https://api.treepruning.org',
+          target: 'https://api-dev.treepruning.org/api/v1',
           changeOrigin: true,
         },
       },

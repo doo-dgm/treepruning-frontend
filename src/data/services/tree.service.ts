@@ -3,8 +3,8 @@ import type { ApiResponse } from '@/data/types/ApiResponse'
 
 export interface Tree {
   id:        string
-  latitude:  number      // ← agrega
-  longitude: number      // ← agrega
+  latitude:  number
+  longitude: number
   family?:   {
     id:             string
     commonName:     string

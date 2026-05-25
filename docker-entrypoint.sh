@@ -7,8 +7,7 @@ for f in "$ASSETS"/*.js; do
   [ -f "$f" ] || continue
   sed -i \
     -e "s|__VITE_API_BASE_URL__|${VITE_API_BASE_URL:-}|g" \
-    -e "s|__VITE_KEYCLOAK_URL__|${VITE_KEYCLOAK_URL:-}|g" \
-    -e "s|__VITE_KEYCLOAK_REALM__|${VITE_KEYCLOAK_REALM:-}|g" \
+    -e "s|__VITE_KEYCLOAK_ISSUER_URI__|${VITE_KEYCLOAK_ISSUER_URI:-}|g" \
     -e "s|__VITE_KEYCLOAK_CLIENT__|${VITE_KEYCLOAK_CLIENT:-}|g" \
     -e "s|__VITE_FIREBASE_API_KEY__|${VITE_FIREBASE_API_KEY:-}|g" \
     -e "s|__VITE_FIREBASE_AUTH_DOMAIN__|${VITE_FIREBASE_AUTH_DOMAIN:-}|g" \

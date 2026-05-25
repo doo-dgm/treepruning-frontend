@@ -14,8 +14,7 @@ COPY . .
 # Placeholders: Vite los bake en el bundle. El entrypoint los reemplaza
 # con los valores reales de Infisical al iniciar el contenedor.
 ENV VITE_API_BASE_URL=__VITE_API_BASE_URL__ \
-    VITE_KEYCLOAK_URL=__VITE_KEYCLOAK_URL__ \
-    VITE_KEYCLOAK_REALM=__VITE_KEYCLOAK_REALM__ \
+    VITE_KEYCLOAK_ISSUER_URI=__VITE_KEYCLOAK_ISSUER_URI__ \
     VITE_KEYCLOAK_CLIENT=__VITE_KEYCLOAK_CLIENT__ \
     VITE_FIREBASE_API_KEY=__VITE_FIREBASE_API_KEY__ \
     VITE_FIREBASE_AUTH_DOMAIN=__VITE_FIREBASE_AUTH_DOMAIN__ \

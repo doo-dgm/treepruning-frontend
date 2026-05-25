@@ -3,7 +3,7 @@ import { useAuthStore } from '@/presentation/stores/auth'
 import { config } from '@/infra/config'
 
 const api = axios.create({
-  baseURL: config.apiBaseUrl,    // ← usa config
+  baseURL: config.apiBaseUrl,
   headers: { 'Content-Type': 'application/json' },
   timeout: 10000,
 })

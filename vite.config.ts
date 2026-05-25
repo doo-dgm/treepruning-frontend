@@ -19,7 +19,7 @@ export default defineConfig(({ mode }) => {
     server: {
       proxy: {
         '/api': {
-          target: 'https://api-dev.treepruning.org/api/v1',
+          target: env.VITE_API_URL,
           changeOrigin: true,
         },
       },
@@ -31,6 +31,7 @@ export default defineConfig(({ mode }) => {
       'self.VITE_FIREBASE_PROJECT_ID':           JSON.stringify(env.VITE_FIREBASE_PROJECT_ID),
       'self.VITE_FIREBASE_MESSAGING_SENDER_ID':  JSON.stringify(env.VITE_FIREBASE_MESSAGING_SENDER_ID),
       'self.VITE_FIREBASE_APP_ID':               JSON.stringify(env.VITE_FIREBASE_APP_ID),
+      'self.VITE_FIREBASE_VAPID_KEY':           JSON.stringify(env.VITE_FIREBASE_VAPID_KEY),
     },
   }
 })

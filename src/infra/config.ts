@@ -10,6 +10,7 @@ declare const __VITE_FIREBASE_VAPID_KEY__:           string
 declare const __VITE_GOOGLE_MAPS_API_KEY__:          string
 declare const __VITE_RECAPTCHA_SITE_KEY__:           string
 
+
 export const config = {
   apiBaseUrl:                __VITE_API_URL__,
   keycloakIssuerUri:         __VITE_KEYCLOAK_ISSUER_URI__,

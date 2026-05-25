@@ -4,12 +4,12 @@ import {
   getPruningFormDataUseCase,
   schedulePruningUseCase,
   getPruningsUseCase,
+  getTreesBySectorUseCase,
 } from '@/data/composition/pruning.composition'
+import { photoService } from '@/data/services/photo.service'
 
 import { emptyForm }                             from '@/domain/pruning/PruningEntity'
 import type { Pruning, LookupItem, PruningForm, TreeLookupItem } from '@/domain/pruning/PruningEntity'
-import { getTreesBySectorUseCase } from '@/data/composition/pruning.composition'
-import { uploadPhotoUseCase } from '@/data/composition/pruning.composition'
 
 export const usePruningStore = defineStore('pruning', () => {
 
@@ -23,14 +23,21 @@ export const usePruningStore = defineStore('pruning', () => {
 
   const form = ref<PruningForm>(emptyForm())
 
-  const loadingForm = ref(false)
-  const loadingList = ref(false)
-  const submitting  = ref(false)
-  const loadingTrees = ref(false)
-  const successMsg  = ref<string | null>(null)
-  const errorMsg    = ref<string | null>(null)
+  // Archivos seleccionados localmente — se suben al hacer submit, no antes
+  const photoFiles = ref<File[]>([])
 
-  const uploadingPhoto = ref(false)
+  const loadingForm  = ref(false)
+  const loadingList  = ref(false)
+  const submitting   = ref(false)
+  const loadingTrees = ref(false)
+  const successMsg   = ref<string | null>(null)
+  const errorMsg     = ref<string | null>(null)
+
+  // Estado del modal de detalle
+  const selectedPruning       = ref<Pruning | null>(null)
+  const selectedPruningPhotos = ref<string[]>([])
+  const loadingPhotos         = ref(false)
+  const photoLoadError        = ref<string | null>(null)
 
   async function loadFormData() {
     loadingForm.value = true
@@ -85,9 +92,20 @@ export const usePruningStore = defineStore('pruning', () => {
     errorMsg.value   = null
     submitting.value = true
     try {
+      // Subir fotos pendientes antes de programar la poda
+      if (photoFiles.value.length > 0) {
+        const paths: string[] = []
+        for (const file of photoFiles.value) {
+          const res = await photoService.upload(file)
+          paths.push(res.data.data.path)
+        }
+        form.value.photographicRecordPath = paths.join(',')
+      }
+
       await schedulePruningUseCase.execute(form.value)
       successMsg.value = 'Poda programada exitosamente.'
       form.value       = emptyForm()
+      photoFiles.value = []
       await refreshPrunings()
     } catch (err) {
       errorMsg.value = err instanceof Error
@@ -98,16 +116,36 @@ export const usePruningStore = defineStore('pruning', () => {
     }
   }
 
+  function addPhoto(file: File) {
+    photoFiles.value = [...photoFiles.value, file]
+  }
 
-  async function uploadPhoto(file: File) {
-    uploadingPhoto.value = true
-    try {
-      form.value.photographicRecordPath = await uploadPhotoUseCase.execute(file)
-    } catch (err) {
-      errorMsg.value = err instanceof Error ? err.message : 'Error al subir foto'
-    } finally {
-      uploadingPhoto.value = false
+  function removePhoto(index: number) {
+    photoFiles.value = photoFiles.value.filter((_, i) => i !== index)
+  }
+
+  async function openDetail(pruning: Pruning) {
+    selectedPruning.value       = pruning
+    selectedPruningPhotos.value = []
+    photoLoadError.value        = null
+
+    if (pruning.photographicRecordPath) {
+      loadingPhotos.value = true
+      try {
+        const res = await photoService.getUrls(pruning.id)
+        selectedPruningPhotos.value = res.data.data?.urls ?? []
+      } catch {
+        photoLoadError.value = 'Error al cargar imágenes'
+      } finally {
+        loadingPhotos.value = false
+      }
     }
+  }
+
+  function closeDetail() {
+    selectedPruning.value       = null
+    selectedPruningPhotos.value = []
+    photoLoadError.value        = null
   }
 
   function selectTree(treeId: string) {
@@ -122,9 +160,11 @@ export const usePruningStore = defineStore('pruning', () => {
 
   return {
     statuses, trees, quadrilles, pruningTypes, prunings, sectors,
-    form,
+    form, photoFiles,
     loadingForm, loadingList, submitting, loadingTrees, successMsg, errorMsg,
     selectedTreeCoords, selectTree,
-    loadFormData, loadTreesBySector, submit, uploadingPhoto, uploadPhoto
+    selectedPruning, selectedPruningPhotos, loadingPhotos, photoLoadError,
+    loadFormData, loadTreesBySector, submit, addPhoto, removePhoto,
+    openDetail, closeDetail,
   }
 })

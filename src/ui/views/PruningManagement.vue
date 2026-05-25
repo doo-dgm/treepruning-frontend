@@ -3,15 +3,17 @@ import { onMounted }       from 'vue'
 import { storeToRefs }     from 'pinia'
 import { useI18n }         from 'vue-i18n'
 import { usePruningStore } from '@/presentation/stores/pruning.store'
-import PhotoCapture from '@/ui/components/PhotoCapture.vue'
-import TreeMap from '@/ui/components/TreeMap.vue'
+import PhotoCapture        from '@/ui/components/PhotoCapture.vue'
+import TreeMap             from '@/ui/components/TreeMap.vue'
+import PruningDetailModal  from '@/ui/components/PruningDetailModal.vue'
 
 const { t }   = useI18n()
 const store   = usePruningStore()
 const {
   statuses, trees, quadrilles, pruningTypes, prunings, sectors, loadingTrees,
-  form,
-  loadingForm, loadingList, submitting, successMsg, errorMsg, uploadingPhoto, selectedTreeCoords
+  form, photoFiles,
+  loadingForm, loadingList, submitting, successMsg, errorMsg, selectedTreeCoords,
+  selectedPruning, selectedPruningPhotos, loadingPhotos, photoLoadError,
 } = storeToRefs(store)
 
 console.log('PruningManagement mounted, store refs:', {
@@ -126,9 +128,10 @@ onMounted(() => store.loadFormData())
             <div class="col-12">
               <label class="form-label">{{ t('pruning.form.photoOptional') }}</label>
               <PhotoCapture
-                v-model="form.photographicRecordPath"
-                :uploading="uploadingPhoto"
-                @capture="store.uploadPhoto"
+                :files="photoFiles"
+                :uploading="submitting"
+                @add="store.addPhoto"
+                @remove="store.removePhoto"
               />
             </div>
 
@@ -174,18 +177,28 @@ onMounted(() => store.loadFormData())
                 <th>{{ t('pruning.table.type')         }}</th>
                 <th>{{ t('pruning.table.sector')       }}</th>
                 <th>{{ t('pruning.table.observations') }}</th>
+                <th>{{ t('pruning.table.actions')      }}</th>
               </tr>
             </thead>
             <tbody>
               <tr v-for="p in prunings" :key="p.id">
-                <td>{{ p.plannedDate              ?? t('common.empty') }}</td>
-                <td>{{ p.executedDate             ?? t('common.empty') }}</td>
-                <td>{{ p.status?.name             ?? t('common.empty') }}</td>
-                <td>{{ p.tree?.family?.commonName ?? t('common.empty') }}</td>
-                <td>{{ p.quadrille?.quadrilleName ?? t('common.empty') }}</td>
-                <td>{{ p.type?.name               ?? t('common.empty') }}</td>
-                <td>{{ p.sector?.name             ?? t('common.empty') }}</td>
-                <td>{{ p.observations             || t('common.empty') }}</td>
+                <td>{{ p.plannedDate                    ?? t('common.empty') }}</td>
+                <td>{{ p.executedDate                   ?? t('common.empty') }}</td>
+                <td>{{ p.status?.name                   ?? t('common.empty') }}</td>
+                <td>{{ p.tree?.family?.commonName       ?? t('common.empty') }}</td>
+                <td>{{ p.quadrille?.quadrilleName       ?? t('common.empty') }}</td>
+                <td>{{ p.type?.name                     ?? t('common.empty') }}</td>
+                <td>{{ p.tree?.sector?.name             ?? t('common.empty') }}</td>
+                <td>{{ p.observations                   || t('common.empty') }}</td>
+                <td>
+                  <button
+                    type="button"
+                    class="btn btn-outline-success btn-sm"
+                    @click="store.openDetail(p)"
+                  >
+                    {{ t('pruning.detail.view') }}
+                  </button>
+                </td>
               </tr>
             </tbody>
           </table>
@@ -194,4 +207,13 @@ onMounted(() => store.loadFormData())
     </div>
 
   </div>
+
+  <!-- Modal de detalle de poda -->
+  <PruningDetailModal
+    :pruning="selectedPruning"
+    :photos="selectedPruningPhotos"
+    :loading-photos="loadingPhotos"
+    :photo-error="photoLoadError"
+    @close="store.closeDetail()"
+  />
 </template>

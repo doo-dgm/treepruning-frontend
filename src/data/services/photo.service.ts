@@ -5,6 +5,11 @@ export interface PhotoUploadResult {
   path: string
 }
 
+export interface PhotoUrlsResult {
+  urls:             string[]
+  expiresInSeconds: number
+}
+
 export const photoService = {
   upload: (file: File) => {
     const formData = new FormData()
@@ -13,4 +18,7 @@ export const photoService = {
       headers: { 'Content-Type': 'multipart/form-data' },
     })
   },
+
+  getUrls: (pruningId: string) =>
+    api.get<ApiResponse<PhotoUrlsResult>>(`/prunings/${pruningId}/photo-url`),
 }

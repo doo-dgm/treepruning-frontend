@@ -22,7 +22,7 @@ api.interceptors.response.use(
     return Promise.reject(new Error(message))
   },
 )
-
+console.log('API base URL:', import.meta.env.VITE_API_BASE_URL)
 export default {
   get:    <T>(url: string)                                    => api.get<T>(url)             as unknown as Promise<T>,
   post:   <T>(url: string, data?: unknown, config?: object)   => api.post<T>(url, data, config) as unknown as Promise<T>,

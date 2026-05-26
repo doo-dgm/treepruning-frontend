@@ -9,6 +9,7 @@ import {
   schedulePreventiveUseCase,
 } from '@/data/composition/pruning.composition'
 import { showBrowserNotification } from '@/infra/notifications/showBrowserNotification'
+import { resolveErrorMessage }     from '@/infra/errors/errorMessages'
 import { photoService } from '@/data/services/photo.service'
 
 import { emptyForm, emptyBatchForm }             from '@/domain/pruning/PruningEntity'
@@ -115,10 +116,9 @@ export const usePruningStore = defineStore('pruning', () => {
       photoFiles.value = []
       await refreshPrunings()
     } catch (err) {
-      errorMsg.value = err instanceof Error
-        ? `Error al programar poda: ${err.message}`
-        : 'Error desconocido'
-      showBrowserNotification('Error al programar poda', errorMsg.value)
+      const raw = err instanceof Error ? err.message : 'Error desconocido'
+      errorMsg.value = `Error al programar poda: ${resolveErrorMessage(raw)}`
+      showBrowserNotification('Error al programar poda', resolveErrorMessage(raw))
     } finally {
       submitting.value = false
     }
@@ -227,8 +227,9 @@ export const usePruningStore = defineStore('pruning', () => {
       resetPreventiveForm()
       await refreshPrunings()
     } catch (err) {
-      preventiveErrorMsg.value = err instanceof Error ? err.message : 'Error desconocido'
-      showBrowserNotification('Error al programar poda', preventiveErrorMsg.value)
+      const raw = err instanceof Error ? err.message : 'Error desconocido'
+      preventiveErrorMsg.value = resolveErrorMessage(raw)
+      showBrowserNotification('Error al programar poda', resolveErrorMessage(raw))
     } finally {
       preventiveSubmitting.value = false
     }

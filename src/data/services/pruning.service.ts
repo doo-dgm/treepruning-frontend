@@ -1,12 +1,13 @@
 import api from '@/infra/api'
 import type { Pruning, PruningForm } from '@/domain/pruning/PruningEntity'
 import type { ApiResponse, PagedResponse  } from '@/data/types/ApiResponse'
+import type { PreventivePayload } from '@/domain/pruning/SchedulePreventivePruningUseCase'
 
 export const pruningService = {
   getAll: () => api.get<ApiResponse<PagedResponse<Pruning>>>('/prunings'),
-  getById:    (id: string)        => api.get<ApiResponse<Pruning>>(`/prunings/${id}`),
+  getById: (id: string) => api.get<ApiResponse<Pruning>>(`/prunings/${id}`),
+
   schedule: (data: PruningForm) => {
-    // El backend deserializa LocalDate: cadena vacia falla. Enviar null si no hay valor.
     const payload = {
       ...data,
       executedDate:           data.executedDate           || null,
@@ -14,4 +15,7 @@ export const pruningService = {
     }
     return api.post<ApiResponse<void>>('/prunings', payload)
   },
+
+  schedulePreventive: (data: PreventivePayload) =>
+    api.post<ApiResponse<{ count: number }>>('/prunings', data),
 }

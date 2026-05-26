@@ -1,6 +1,7 @@
 // src/data/repositories/PruningRepositoryImpl.ts
 import type { PruningRepository, PruningFormData } from '@/domain/pruning/PruningRepository'
 import type { Pruning, LookupItem, PruningForm, TreeLookupItem } from '@/domain/pruning/PruningEntity'
+import type { PreventivePayload } from '@/domain/pruning/SchedulePreventivePruningUseCase'
 import { photoService } from '@/data/services/photo.service'
 import {
   statusService,
@@ -49,5 +50,10 @@ export class PruningRepositoryImpl implements PruningRepository {
   async uploadPhoto(file: File): Promise<string> {
     const res = await photoService.upload(file)
     return res.data.path
+  }
+
+  async schedulePreventive(payload: PreventivePayload): Promise<number> {
+    const res = await pruningService.schedulePreventive(payload)
+    return res.data.count
   }
 }

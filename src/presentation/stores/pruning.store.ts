@@ -6,11 +6,15 @@ import {
   getPruningsUseCase,
   getTreesBySectorUseCase,
   uploadPhotoUseCase,
+  schedulePreventiveUseCase,
 } from '@/data/composition/pruning.composition'
 import { photoService } from '@/data/services/photo.service'
 
-import { emptyForm }                             from '@/domain/pruning/PruningEntity'
-import type { Pruning, LookupItem, PruningForm, TreeLookupItem } from '@/domain/pruning/PruningEntity'
+import { emptyForm, emptyBatchForm }             from '@/domain/pruning/PruningEntity'
+import type {
+  Pruning, LookupItem, PruningForm, TreeLookupItem,
+  PreventiveBatchForm, SelectedTreeEntry,
+} from '@/domain/pruning/PruningEntity'
 
 export const usePruningStore = defineStore('pruning', () => {
 
@@ -63,22 +67,22 @@ export const usePruningStore = defineStore('pruning', () => {
   }
 
   async function loadTreesBySector(sectorId: string) {
-  if (!sectorId) {
-    trees.value      = []
-    form.value.tree  = ''
-    return
+    if (!sectorId) {
+      trees.value      = []
+      form.value.tree  = ''
+      return
+    }
+    loadingTrees.value = true
+    try {
+      trees.value     = await getTreesBySectorUseCase.execute(sectorId)
+      form.value.tree = ''   // resetea el arbol seleccionado al cambiar sector
+    } catch (err) {
+      errorMsg.value = err instanceof Error ? err.message : 'Error al cargar arboles'
+      trees.value    = []
+    } finally {
+      loadingTrees.value = false
+    }
   }
-  loadingTrees.value = true
-  try {
-    trees.value     = await getTreesBySectorUseCase.execute(sectorId)
-    form.value.tree = ''   // resetea el árbol seleccionado al cambiar sector
-  } catch (err) {
-    errorMsg.value = err instanceof Error ? err.message : 'Error al cargar árboles'
-    trees.value    = []
-  } finally {
-    loadingTrees.value = false
-  }
-}
 
   async function refreshPrunings() {
     try {
@@ -98,7 +102,7 @@ export const usePruningStore = defineStore('pruning', () => {
         const paths: string[] = []
         for (const file of photoFiles.value) {
           const path = await uploadPhotoUseCase.execute(file)
-          if (!path) throw new Error('La foto no retornó una ruta válida.')
+          if (!path) throw new Error('La foto no retorno una ruta valida.')
           paths.push(path)
         }
         form.value.photographicRecordPath = paths.join(',')
@@ -137,7 +141,7 @@ export const usePruningStore = defineStore('pruning', () => {
         const res = await photoService.getUrls(pruning.id)
         selectedPruningPhotos.value = res.data?.urls ?? []
       } catch {
-        photoLoadError.value = 'Error al cargar imágenes'
+        photoLoadError.value = 'Error al cargar imagenes'
       } finally {
         loadingPhotos.value = false
       }
@@ -150,23 +154,100 @@ export const usePruningStore = defineStore('pruning', () => {
     photoLoadError.value        = null
   }
 
+  // ── Poda preventiva ─────────────────────────────────────────────────────────
+
+  const preventiveForm          = ref<PreventiveBatchForm>(emptyBatchForm())
+  const selectedPreventiveTrees = ref<SelectedTreeEntry[]>([])
+  const preventiveSubmitting    = ref(false)
+  const preventiveSuccessMsg    = ref<string | null>(null)
+  const preventiveErrorMsg      = ref<string | null>(null)
+
+  /** Agrega un arbol a la lista. No agrega duplicados ni arboles sin coordenadas. */
+  function addTreeToPreventive(treeId: string) {
+    const tree = trees.value.find(t => t.id === treeId)
+    if (!tree) return
+    if (selectedPreventiveTrees.value.some(t => t.id === treeId)) return
+    if (!tree.latitude || !tree.longitude) return
+    selectedPreventiveTrees.value = [
+      ...selectedPreventiveTrees.value,
+      {
+        id:    tree.id,
+        label: tree.family?.commonName ?? tree.id,
+        lat:   tree.latitude,
+        lng:   tree.longitude,
+      },
+    ]
+  }
+
+  function removeTreeFromPreventive(treeId: string) {
+    selectedPreventiveTrees.value = selectedPreventiveTrees.value.filter(t => t.id !== treeId)
+  }
+
+  function resetPreventiveForm() {
+    preventiveForm.value          = emptyBatchForm()
+    selectedPreventiveTrees.value = []
+    preventiveSuccessMsg.value    = null
+    preventiveErrorMsg.value      = null
+    photoFiles.value              = []
+  }
+
+  async function submitPreventive() {
+    preventiveSuccessMsg.value = null
+    preventiveErrorMsg.value   = null
+    preventiveSubmitting.value = true
+    try {
+      // Subir fotos primero (si hay)
+      if (photoFiles.value.length > 0) {
+        const paths: string[] = []
+        for (const file of photoFiles.value) {
+          const path = await uploadPhotoUseCase.execute(file)
+          if (!path) throw new Error('La foto no retorno una ruta valida.')
+          paths.push(path)
+        }
+        preventiveForm.value.photographicRecordPath = paths.join(',')
+      }
+
+      const count = await schedulePreventiveUseCase.execute({
+        trees:                  selectedPreventiveTrees.value.map(t => t.id),
+        plannedDate:            preventiveForm.value.plannedDate,
+        quadrille:              preventiveForm.value.quadrille,
+        photographicRecordPath: preventiveForm.value.photographicRecordPath || null,
+        observations:           preventiveForm.value.observations           || null,
+      })
+
+      preventiveSuccessMsg.value = `${count} poda(s) preventiva(s) programada(s) exitosamente.`
+      resetPreventiveForm()
+      await refreshPrunings()
+    } catch (err) {
+      preventiveErrorMsg.value = err instanceof Error ? err.message : 'Error desconocido'
+    } finally {
+      preventiveSubmitting.value = false
+    }
+  }
+
   function selectTree(treeId: string) {
     const tree = trees.value.find(t => t.id === treeId)
     if (tree?.latitude && tree?.longitude) {
       selectedTreeCoords.value = { lat: tree.latitude, lng: tree.longitude }
-      console.log('coords guardadas →', selectedTreeCoords.value)
     } else {
       selectedTreeCoords.value = null
     }
   }
 
   return {
+    // datos de catalogo
     statuses, trees, quadrilles, pruningTypes, prunings, sectors,
+    // formulario individual (legacy / futuro uso)
     form, photoFiles,
     loadingForm, loadingList, submitting, loadingTrees, successMsg, errorMsg,
     selectedTreeCoords, selectTree,
+    // detalle de poda
     selectedPruning, selectedPruningPhotos, loadingPhotos, photoLoadError,
     loadFormData, loadTreesBySector, submit, addPhoto, removePhoto,
     openDetail, closeDetail,
+    // poda preventiva
+    preventiveForm, selectedPreventiveTrees, preventiveSubmitting,
+    preventiveSuccessMsg, preventiveErrorMsg,
+    addTreeToPreventive, removeTreeFromPreventive, resetPreventiveForm, submitPreventive,
   }
 })

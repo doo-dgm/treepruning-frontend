@@ -1,164 +1,258 @@
 <script setup lang="ts">
-import { onMounted }       from 'vue'
-import { storeToRefs }     from 'pinia'
-import { useI18n }         from 'vue-i18n'
-import { usePruningStore } from '@/presentation/stores/pruning.store'
-import PhotoCapture        from '@/ui/components/PhotoCapture.vue'
-import TreeMap             from '@/ui/components/TreeMap.vue'
-import PruningDetailModal  from '@/ui/components/PruningDetailModal.vue'
+import { ref, computed, onMounted } from 'vue'
+import { storeToRefs }              from 'pinia'
+import { useI18n }                  from 'vue-i18n'
+import { usePruningStore }          from '@/presentation/stores/pruning.store'
+import PhotoCapture                 from '@/ui/components/PhotoCapture.vue'
+import TreeMap                      from '@/ui/components/TreeMap.vue'
+import PruningDetailModal           from '@/ui/components/PruningDetailModal.vue'
+import type { MapMarker }           from '@/ui/components/TreeMap.vue'
 
-const { t }   = useI18n()
-const store   = usePruningStore()
+const { t } = useI18n()
+const store = usePruningStore()
+
 const {
-  statuses, trees, quadrilles, pruningTypes, prunings, sectors, loadingTrees,
-  form, photoFiles,
-  loadingForm, loadingList, submitting, successMsg, errorMsg, selectedTreeCoords,
+  // catalogos
+  trees, quadrilles, prunings, sectors, loadingTrees,
+  photoFiles, loadingForm, loadingList, preventiveSubmitting,
+  // poda preventiva
+  preventiveForm, selectedPreventiveTrees, preventiveSuccessMsg, preventiveErrorMsg,
+  // detalle
   selectedPruning, selectedPruningPhotos, loadingPhotos, photoLoadError,
 } = storeToRefs(store)
 
-console.log('PruningManagement mounted, store refs:', {
+// ── Estado de la vista ────────────────────────────────────────────────────────
 
-  prunings: prunings,
-})
+const showPreventiveForm = ref(false)
+const selectedTreeId     = ref('')   // selector temporal antes de "Agregar"
+
+// Arbol seleccionado en el dropdown (aun no anadido)
+const pendingTree = computed(() =>
+  trees.value.find(t => t.id === selectedTreeId.value) ?? null
+)
+
+// Marcadores para el mapa multi-arbol
+const preventiveMarkers = computed<MapMarker[]>(() =>
+  selectedPreventiveTrees.value.map(t => ({ lat: t.lat, lng: t.lng, label: t.label }))
+)
+
+// ── Acciones ──────────────────────────────────────────────────────────────────
+
 onMounted(() => store.loadFormData())
+
+function openPreventiveForm() {
+  store.resetPreventiveForm()
+  selectedTreeId.value = ''
+  showPreventiveForm.value = true
+}
+
+function cancelPreventiveForm() {
+  store.resetPreventiveForm()
+  selectedTreeId.value = ''
+  showPreventiveForm.value = false
+}
+
+function handleAddTree() {
+  if (!selectedTreeId.value) return
+  store.addTreeToPreventive(selectedTreeId.value)
+  selectedTreeId.value = ''
+}
+
+async function handleSubmitPreventive() {
+  await store.submitPreventive()
+  if (preventiveSuccessMsg.value) {
+    showPreventiveForm.value = false
+  }
+}
 </script>
 
 <template>
   <div class="container mt-4">
-    <h4 class="mb-4">{{ t('pruning.title') }}</h4>
 
-    <div class="card mb-4">
-      <div class="card-header fw-semibold">{{ t('pruning.newPruning') }}</div>
+    <!-- ── Encabezado + acciones ─────────────────────────────────────────── -->
+    <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+      <h4 class="mb-0">{{ t('pruning.title') }}</h4>
+      <div class="d-flex gap-2">
+        <button
+          class="btn btn-success"
+          :disabled="showPreventiveForm"
+          @click="openPreventiveForm"
+        >
+          {{ t('pruning.preventive.btnCreate') }}
+        </button>
+        <button class="btn btn-outline-secondary" disabled title="Proximamente">
+          {{ t('pruning.preventive.btnCorrective') }}
+          <span class="badge bg-secondary ms-1 fw-normal">{{ t('pruning.preventive.soon') }}</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ── Formulario poda preventiva ────────────────────────────────────── -->
+    <div v-if="showPreventiveForm" class="card mb-4 border-success">
+      <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+        <span class="fw-semibold">{{ t('pruning.preventive.title') }}</span>
+        <button type="button" class="btn-close btn-close-white" @click="cancelPreventiveForm" />
+      </div>
       <div class="card-body">
 
         <div v-if="loadingForm" class="text-center py-3">
-          <div class="spinner-border text-success" role="status">
-            <span class="visually-hidden">{{ t('common.loading') }}</span>
-          </div>
+          <div class="spinner-border text-success" role="status" />
         </div>
 
-        <form v-else @submit.prevent="store.submit">
-          <div v-if="successMsg" class="alert alert-success py-2">{{ successMsg }}</div>
-          <div v-if="errorMsg"   class="alert alert-danger  py-2">{{ errorMsg }}</div>
+        <form v-else @submit.prevent="handleSubmitPreventive">
+          <div v-if="preventiveSuccessMsg" class="alert alert-success py-2">{{ preventiveSuccessMsg }}</div>
+          <div v-if="preventiveErrorMsg"   class="alert alert-danger  py-2">{{ preventiveErrorMsg }}</div>
 
           <div class="row g-3">
-            <div class="col-md-6">
-              <label class="form-label">{{ t('pruning.form.status') }}</label>
-              <select v-model="form.status" class="form-select" required>
-                <option value="" disabled>{{ t('pruning.form.statusPh') }}</option>
-                <option v-for="s in statuses" :key="s.id" :value="s.id">
-                  {{ s.name ?? s.nombre ?? s.id }}
-                </option>
-              </select>
-            </div>
 
-            <div class="col-md-6">
-              <label class="form-label">{{ t('pruning.form.type') }}</label>
-              <select v-model="form.type" class="form-select" required>
-                <option value="" disabled>{{ t('pruning.form.typePh') }}</option>
-                <option v-for="pt in pruningTypes" :key="pt.id" :value="pt.id">
-                  {{ pt.name ?? pt.nombre ?? pt.id }}
-                </option>
-              </select>
-            </div>
-
-            <div class="col-md-6">
-              <label class="form-label">{{ t('pruning.form.sector') }}</label>
+            <!-- Selector de sector + arbol -->
+            <div class="col-md-5">
+              <label class="form-label">{{ t('pruning.preventive.sector') }}</label>
               <select
-                v-model="form.sector"
+                v-model="preventiveForm.sector"
                 class="form-select"
-                required
-                @change="store.loadTreesBySector(form.sector)"
+                @change="store.loadTreesBySector(preventiveForm.sector)"
               >
-                <option value="" disabled>{{ t('pruning.form.sectorPh') }}</option>
+                <option value="" disabled>{{ t('pruning.preventive.sectorPh') }}</option>
                 <option v-for="s in sectors" :key="s.id" :value="s.id">
                   {{ s.name ?? s.id }}
                 </option>
               </select>
             </div>
 
-            <div class="col-md-6">
-              <label class="form-label">{{ t('pruning.form.tree') }}</label>
+            <div class="col-md-5">
+              <label class="form-label">{{ t('pruning.preventive.treeSelect') }}</label>
               <select
-                v-model="form.tree"
+                v-model="selectedTreeId"
                 class="form-select"
-                required
-                :disabled="!form.sector || loadingTrees"
-                @change="store.selectTree(form.tree)"
+                :disabled="!preventiveForm.sector || loadingTrees"
               >
                 <option value="" disabled>
-                  {{ loadingTrees ? t('common.loading') : t('pruning.form.treePh') }}
+                  {{ loadingTrees ? t('common.loading') : t('pruning.preventive.treePh') }}
                 </option>
-                <option v-for="tr in trees" :key="tr.id" :value="tr.id">
-                  {{ tr.family?.commonName + ' ( Lat ' + tr.latitude + ', Lon ' + tr.longitude + ')' }}
+                <option
+                  v-for="tr in trees"
+                  :key="tr.id"
+                  :value="tr.id"
+                  :disabled="selectedPreventiveTrees.some(s => s.id === tr.id)"
+                >
+                  {{ tr.family?.commonName ?? tr.id }}
+                  ({{ tr.latitude?.toFixed(4) }}, {{ tr.longitude?.toFixed(4) }})
                 </option>
               </select>
             </div>
 
+            <div class="col-md-2 d-flex align-items-end">
+              <button
+                type="button"
+                class="btn btn-outline-success w-100"
+                :disabled="!selectedTreeId"
+                @click="handleAddTree"
+              >
+                {{ t('pruning.preventive.addTree') }}
+              </button>
+            </div>
+
+            <!-- Chips de arboles seleccionados -->
             <div class="col-12">
-              <TreeMap
-                :latitude="selectedTreeCoords?.lat ?? null"
-                :longitude="selectedTreeCoords?.lng ?? null"
-                :label="trees.find(t => t.id === form.tree)?.family?.commonName"
-              />
-            </div>
-
-            <div class="col-md-6">
-              <label class="form-label">{{ t('pruning.form.quadrille') }}</label>
-              <select v-model="form.quadrille" class="form-select" required>
-                <option value="" disabled>{{ t('pruning.form.quadrillePh') }}</option>
-                <option v-for="q in quadrilles" :key="q.id" :value="q.id">
-                  {{ q.name ?? q.quadrilleName ?? q.id }}
-                </option>
-              </select>
-            </div>
-
-            <div class="col-md-6">
-              <label class="form-label">{{ t('pruning.form.plannedDate') }}</label>
-              <input v-model="form.plannedDate" type="date" class="form-control" required />
-            </div>
-
-            <div class="col-md-6">
-              <label class="form-label">
-                {{ t('pruning.form.executedDateOptional') }}
+              <label class="form-label fw-semibold">
+                {{ t('pruning.preventive.treesSection') }}
+                <span class="badge bg-success ms-1">{{ selectedPreventiveTrees.length }}</span>
               </label>
-              <input v-model="form.executedDate" type="date" class="form-control" />
+              <div v-if="selectedPreventiveTrees.length === 0" class="text-muted small">
+                {{ t('pruning.preventive.noTrees') }}
+              </div>
+              <div v-else class="d-flex flex-wrap gap-2">
+                <span
+                  v-for="entry in selectedPreventiveTrees"
+                  :key="entry.id"
+                  class="badge bg-success-subtle text-success-emphasis border border-success-subtle d-flex align-items-center gap-1 px-2 py-1"
+                  style="font-size:0.82rem"
+                >
+                  {{ entry.label }}
+                  <button
+                    type="button"
+                    class="btn-close btn-close"
+                    style="font-size:0.6rem"
+                    :title="t('pruning.preventive.removeTree')"
+                    @click="store.removeTreeFromPreventive(entry.id)"
+                  />
+                </span>
+              </div>
             </div>
 
+            <!-- Mapa multi-arbol -->
             <div class="col-12">
-              <label class="form-label">{{ t('pruning.form.photoOptional') }}</label>
+              <TreeMap :markers="preventiveMarkers" />
+            </div>
+
+            <!-- Fecha planeada + Cuadrilla -->
+            <div class="col-md-6">
+              <label class="form-label">{{ t('pruning.preventive.plannedDate') }}</label>
+              <input v-model="preventiveForm.plannedDate" type="date" class="form-control" required />
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label">{{ t('pruning.preventive.quadrille') }}</label>
+              <select v-model="preventiveForm.quadrille" class="form-select" required>
+                <option value="" disabled>{{ t('pruning.preventive.quadrillePh') }}</option>
+                <option v-for="q in quadrilles" :key="q.id" :value="q.id">
+                  {{ (q as any).quadrilleName ?? q.name ?? q.id }}
+                </option>
+              </select>
+            </div>
+
+            <!-- Fotos (opcional) -->
+            <div class="col-12">
+              <label class="form-label">{{ t('pruning.preventive.photo') }}</label>
               <PhotoCapture
                 :files="photoFiles"
-                :uploading="submitting"
+                :uploading="preventiveSubmitting"
                 @add="store.addPhoto"
                 @remove="store.removePhoto"
               />
             </div>
 
+            <!-- Observaciones (opcional) -->
             <div class="col-12">
-              <label class="form-label">{{ t('pruning.form.obsOptional') }}</label>
-              <textarea v-model="form.observations" class="form-control" rows="2"></textarea>
+              <label class="form-label">{{ t('pruning.preventive.observations') }}</label>
+              <textarea v-model="preventiveForm.observations" class="form-control" rows="2" />
             </div>
 
-            <div class="col-12">
-              <button type="submit" class="btn btn-success" :disabled="submitting">
-                <span v-if="submitting" class="spinner-border spinner-border-sm me-1"></span>
-                {{ submitting ? t('pruning.scheduling') : t('pruning.schedule') }}
+            <!-- Botones -->
+            <div class="col-12 d-flex gap-2">
+              <button
+                type="submit"
+                class="btn btn-success"
+                :disabled="preventiveSubmitting || selectedPreventiveTrees.length === 0 || !preventiveForm.plannedDate || !preventiveForm.quadrille"
+              >
+                <span v-if="preventiveSubmitting" class="spinner-border spinner-border-sm me-1" />
+                {{ preventiveSubmitting
+                    ? t('pruning.preventive.submitting')
+                    : t('pruning.preventive.submit', { count: selectedPreventiveTrees.length }) }}
+              </button>
+              <button
+                type="button"
+                class="btn btn-outline-secondary"
+                :disabled="preventiveSubmitting"
+                @click="cancelPreventiveForm"
+              >
+                {{ t('pruning.preventive.cancel') }}
               </button>
             </div>
+
           </div>
         </form>
       </div>
     </div>
 
+    <!-- ── Tabla de podas registradas ─────────────────────────────────────── -->
     <div class="card">
       <div class="card-header fw-semibold">{{ t('pruning.registered') }}</div>
       <div class="card-body p-0">
 
         <div v-if="loadingList" class="text-center py-4">
-          <div class="spinner-border text-success" role="status">
-            <span class="visually-hidden">{{ t('common.loading') }}</span>
-          </div>
+          <div class="spinner-border text-success" role="status" />
         </div>
 
         <div v-else-if="prunings.length === 0" class="text-muted text-center py-4">
@@ -182,14 +276,14 @@ onMounted(() => store.loadFormData())
             </thead>
             <tbody>
               <tr v-for="p in prunings" :key="p.id">
-                <td>{{ p.plannedDate                    ?? t('common.empty') }}</td>
-                <td>{{ p.executedDate                   ?? t('common.empty') }}</td>
-                <td>{{ p.status?.name                   ?? t('common.empty') }}</td>
-                <td>{{ p.tree?.family?.commonName       ?? t('common.empty') }}</td>
-                <td>{{ p.quadrille?.quadrilleName       ?? t('common.empty') }}</td>
-                <td>{{ p.type?.name                     ?? t('common.empty') }}</td>
-                <td>{{ p.tree?.sector?.name             ?? t('common.empty') }}</td>
-                <td>{{ p.observations                   || t('common.empty') }}</td>
+                <td>{{ p.plannedDate              ?? t('common.empty') }}</td>
+                <td>{{ p.executedDate             ?? t('common.empty') }}</td>
+                <td>{{ p.status?.name             ?? t('common.empty') }}</td>
+                <td>{{ p.tree?.family?.commonName ?? t('common.empty') }}</td>
+                <td>{{ (p.quadrille as any)?.quadrilleName ?? p.quadrille?.name ?? t('common.empty') }}</td>
+                <td>{{ p.type?.name               ?? t('common.empty') }}</td>
+                <td>{{ p.tree?.sector?.name       ?? t('common.empty') }}</td>
+                <td>{{ p.observations             || t('common.empty') }}</td>
                 <td>
                   <button
                     type="button"
@@ -203,12 +297,13 @@ onMounted(() => store.loadFormData())
             </tbody>
           </table>
         </div>
+
       </div>
     </div>
 
   </div>
 
-  <!-- Modal de detalle de poda -->
+  <!-- Modal de detalle -->
   <PruningDetailModal
     :pruning="selectedPruning"
     :photos="selectedPruningPhotos"

@@ -1,5 +1,6 @@
 // src/domain/pruning/PruningRepository.ts
 import type { Pruning, LookupItem, PruningForm, TreeLookupItem } from './PruningEntity'
+import type { PreventivePayload } from './SchedulePreventivePruningUseCase'
 
 export interface PruningFormData {
   statuses:     LookupItem[]
@@ -11,9 +12,10 @@ export interface PruningFormData {
 }
 
 export interface PruningRepository {
-  getFormData():                      Promise<PruningFormData>
-  getTreesBySector(sectorId: string): Promise<TreeLookupItem[]>  // ← solo uno
-  getPrunings():                      Promise<Pruning[]>
-  schedule(form: PruningForm):        Promise<void>
-  uploadPhoto(file: File):            Promise<string>
+  getFormData():                                    Promise<PruningFormData>
+  getTreesBySector(sectorId: string):               Promise<TreeLookupItem[]>
+  getPrunings():                                    Promise<Pruning[]>
+  schedule(form: PruningForm):                      Promise<void>
+  uploadPhoto(file: File):                          Promise<string>
+  schedulePreventive(p: PreventivePayload):         Promise<number>
 }

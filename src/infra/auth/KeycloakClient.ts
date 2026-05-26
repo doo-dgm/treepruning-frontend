@@ -34,6 +34,7 @@ function scheduleRefresh(expiresInSeconds: number) {
 export const keycloakClient = {
 
   async login(credentials: { username: string; password: string; recaptchaToken?: string }): Promise<LoginResult> {
+  try {
     const response = await fetch(tokenEndpoint, {
       method:  'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -46,8 +47,12 @@ export const keycloakClient = {
     })
 
     if (!response.ok) {
-      const err = await response.json()
-      return { success: false, message: mapError(err.error) }
+      let errorCode = 'unknown'
+      try {
+        const err = await response.json()
+        errorCode = err.error ?? 'unknown'
+      } catch { /* respuesta sin body JSON */ }
+      return { success: false, message: mapError(errorCode) }
     }
 
     const data    = await response.json()
@@ -62,7 +67,11 @@ export const keycloakClient = {
     scheduleRefresh(data.expires_in)
 
     return { success: true, session }
-  },
+
+  } catch {
+    return { success: false, message: 'Error de conexión con el servidor de autenticación.' }
+  }
+},
 
   async logout(): Promise<void> {
     const refreshToken = keycloakStorage.getRefreshToken()

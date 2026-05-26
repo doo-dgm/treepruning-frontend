@@ -40,7 +40,6 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
 
-  // ── Acción logout ────────────────────────────────────
   async function logout() {
     const { clearNotifications } = useNotifications()
     await clearNotifications()
@@ -50,7 +49,6 @@ export const useAuthStore = defineStore('auth', () => {
 
 
 
-  // ── Mutaciones internas ──────────────────────────────
   function setSession(session: AuthSession) {
     token.value        = session.token
     refreshToken.value = session.refreshToken
@@ -64,30 +62,35 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function login(credentials: { username: string; password: string }) {
-  let recaptchaToken: string | undefined
+    let recaptchaToken: string | undefined
 
-  // A partir del segundo intento solicita reCAPTCHA
-  if (requireCaptcha.value) {
-    try {
-      recaptchaToken = await getRecaptchaToken('login')
-    } catch {
-      loginAttempts.value = 0
-      return { success: false, message: 'Verificación de seguridad no disponible. Intenta de nuevo.' }
+    if (requireCaptcha.value) {
+      try {
+        recaptchaToken = await getRecaptchaToken('login')
+      } catch {
+        loginAttempts.value = 0
+        return { success: false, message: 'Verificación de seguridad no disponible. Intenta de nuevo.' }
+      }
     }
-  }
 
-  const result = await keycloakClient.login({ ...credentials, recaptchaToken })
+    try {
+      const result = await keycloakClient.login({ ...credentials, recaptchaToken })
 
-  if (result.success && result.session) {
-    setSession(result.session!)
-    loginAttempts.value = 0
-    const { initNotifications } = useNotifications()
-    try { await initNotifications() } catch { /* no crítico */ }
-  } else {
-    loginAttempts.value++
-  }
+      if (result.success && result.session) {
+        setSession(result.session!)
+        loginAttempts.value = 0
+        const { initNotifications } = useNotifications()
+        try { await initNotifications() } catch {}
+      } else {
+        loginAttempts.value++
+      }
 
-  return result
+      return result
+
+    } catch {
+      loginAttempts.value++
+      return { success: false, message: 'Error de autenticación.' }
+    }
 }
 
   return {

@@ -187,7 +187,7 @@ async function handleLogout() {
 
 .sidebar__lang-label {
   font-size: 0.78rem;
-  color: #8fa3b8;
+  color: #c4d4e4;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -205,7 +205,7 @@ async function handleLogout() {
   border: none;
   border-radius: 4px;
   background: transparent;
-  color: #8fa3b8;
+  color: #c4d4e4;
   font-size: 0.78rem;
   font-weight: 600;
   cursor: pointer;

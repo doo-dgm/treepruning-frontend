@@ -12,7 +12,7 @@ export default {
     subtitle:       'Sistema de gestión de podas',
     username:       'Usuario',
     usernamePh:     'Nombre de usuario',
-    password:       'Contraseña',
+    passwordLabel:  'Contraseña',
     passwordPh:     '••••••••',
     login:          'Iniciar sesión',
     logout:         'Cerrar sesión',

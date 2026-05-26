@@ -12,7 +12,7 @@ export default {
     subtitle:       'Pruning management system',
     username:       'Username',
     usernamePh:     'Enter your username',
-    password:       'Password',
+    passwordLabel:  'Password',
     passwordPh:     '••••••••',
     login:          'Sign in',
     logout:         'Sign out',

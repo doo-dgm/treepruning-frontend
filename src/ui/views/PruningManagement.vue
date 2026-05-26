@@ -100,15 +100,16 @@ async function handleSubmitPreventive() {
         </div>
 
         <form v-else @submit.prevent="handleSubmitPreventive">
-          <div v-if="preventiveSuccessMsg" class="alert alert-success py-2">{{ preventiveSuccessMsg }}</div>
-          <div v-if="preventiveErrorMsg"   class="alert alert-danger  py-2">{{ preventiveErrorMsg }}</div>
+          <output v-if="preventiveSuccessMsg" class="alert alert-success py-2 d-block">{{ preventiveSuccessMsg }}</output>
+          <output v-if="preventiveErrorMsg"   class="alert alert-danger  py-2 d-block">{{ preventiveErrorMsg }}</output>
 
           <div class="row g-3">
 
             <!-- Selector de sector + arbol -->
             <div class="col-md-5">
-              <label class="form-label">{{ t('pruning.preventive.sector') }}</label>
+              <label for="sector-select" class="form-label">{{ t('pruning.preventive.sector') }}</label>
               <select
+                id="sector-select"
                 v-model="preventiveForm.sector"
                 class="form-select"
                 @change="store.loadTreesBySector(preventiveForm.sector)"
@@ -121,8 +122,9 @@ async function handleSubmitPreventive() {
             </div>
 
             <div class="col-md-5">
-              <label class="form-label">{{ t('pruning.preventive.treeSelect') }}</label>
+              <label for="tree-select" class="form-label">{{ t('pruning.preventive.treeSelect') }}</label>
               <select
+                id="tree-select"
                 v-model="selectedTreeId"
                 class="form-select"
                 :disabled="!preventiveForm.sector || loadingTrees"
@@ -188,13 +190,13 @@ async function handleSubmitPreventive() {
 
             <!-- Fecha planeada + Cuadrilla -->
             <div class="col-md-6">
-              <label class="form-label">{{ t('pruning.preventive.plannedDate') }}</label>
-              <input v-model="preventiveForm.plannedDate" type="date" class="form-control" required />
+              <label for="planned-date" class="form-label">{{ t('pruning.preventive.plannedDate') }}</label>
+              <input id="planned-date" v-model="preventiveForm.plannedDate" type="date" class="form-control" required />
             </div>
 
             <div class="col-md-6">
-              <label class="form-label">{{ t('pruning.preventive.quadrille') }}</label>
-              <select v-model="preventiveForm.quadrille" class="form-select" required>
+              <label for="quadrille-select" class="form-label">{{ t('pruning.preventive.quadrille') }}</label>
+              <select id="quadrille-select" v-model="preventiveForm.quadrille" class="form-select" required>
                 <option value="" disabled>{{ t('pruning.preventive.quadrillePh') }}</option>
                 <option v-for="q in quadrilles" :key="q.id" :value="q.id">
                   {{ (q as any).quadrilleName ?? q.name ?? q.id }}
@@ -215,8 +217,8 @@ async function handleSubmitPreventive() {
 
             <!-- Observaciones (opcional) -->
             <div class="col-12">
-              <label class="form-label">{{ t('pruning.preventive.observations') }}</label>
-              <textarea v-model="preventiveForm.observations" class="form-control" rows="2" />
+              <label for="observations" class="form-label">{{ t('pruning.preventive.observations') }}</label>
+              <textarea id="observations" v-model="preventiveForm.observations" class="form-control" rows="2" />
             </div>
 
             <!-- Botones -->

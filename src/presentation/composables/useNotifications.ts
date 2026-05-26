@@ -54,11 +54,22 @@ export function useNotifications() {
     // Cancelar listener anterior (evita duplicados en login/logout/login)
     unsubscribeFcm?.()
     unsubscribeFcm = onForegroundMessage((payload) => {
-      addNotification(
-        payload.notification?.title ?? 'Notificación',
-        payload.notification?.body  ?? '',
-        'success',
-      )
+      // Cuando la app está en primer plano, Firebase no muestra notificación nativa.
+      // La mostramos manualmente a través del service worker para tener el mismo
+      // comportamiento que en background (notificación del OS, no un toast in-app).
+      const title = payload.notification?.title ?? 'TreePruning'
+      const body  = payload.notification?.body  ?? ''
+      navigator.serviceWorker.ready
+        .then(registration => {
+          registration.showNotification(title, {
+            body,
+            icon: '/arbol.png',
+          })
+        })
+        .catch(() => {
+          // Fallback: si el SW no está disponible, mostrar toast in-app
+          addNotification(title, body, 'info')
+        })
     })
   }
 

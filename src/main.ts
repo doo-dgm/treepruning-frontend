@@ -2,6 +2,7 @@ import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import { initializeKeycloak } from '@/infra/auth/InitializeKeycloak'
 import { i18n } from './infra/i18n'
+import { loadStrapiLocales } from './infra/i18n/strapiLocaleLoader'
 import { VueReCaptcha } from 'vue-recaptcha-v3'
 import { config } from '@/infra/config'
 
@@ -30,3 +31,8 @@ app.use(VueReCaptcha, {
 })
 
 app.mount('#app')
+
+// Carga traducciones de Strapi en segundo plano.
+// La app arranca con los textos estáticos como fallback;
+// setLocaleMessage es reactivo → la UI se actualiza sola al recibir la respuesta.
+loadStrapiLocales()

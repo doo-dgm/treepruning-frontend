@@ -9,6 +9,7 @@ import {
   schedulePreventiveUseCase,
 } from '@/data/composition/pruning.composition'
 import { showBrowserNotification } from '@/infra/notifications/showBrowserNotification'
+import { addNotification }         from '@/presentation/composables/useNotifications'
 import { resolveErrorMessage }     from '@/infra/errors/errorMessages'
 import { photoService } from '@/data/services/photo.service'
 
@@ -112,12 +113,15 @@ export const usePruningStore = defineStore('pruning', () => {
 
       await schedulePruningUseCase.execute(form.value)
       successMsg.value = 'Poda programada exitosamente.'
+      addNotification('Poda programada', 'Poda programada exitosamente.', 'success')
+      showBrowserNotification('Poda programada', 'Poda programada exitosamente.')
       form.value       = emptyForm()
       photoFiles.value = []
       await refreshPrunings()
     } catch (err) {
       const raw = err instanceof Error ? err.message : 'Error desconocido'
       errorMsg.value = `Error al programar poda: ${resolveErrorMessage(raw)}`
+      addNotification('Error al programar poda', resolveErrorMessage(raw), 'error')
       showBrowserNotification('Error al programar poda', resolveErrorMessage(raw))
     } finally {
       submitting.value = false
@@ -219,16 +223,16 @@ export const usePruningStore = defineStore('pruning', () => {
 
       preventiveSuccessMsg.value = `${count} poda(s) preventiva(s) programada(s) exitosamente.`
 
-      showBrowserNotification(
-        'Poda preventiva programada',
-        `${count} poda(s) programada(s) para el ${preventiveForm.value.plannedDate}.`,
-      )
+      const successBody = `${count} poda(s) programada(s) para el ${preventiveForm.value.plannedDate}.`
+      addNotification('Poda preventiva programada', successBody, 'success')
+      showBrowserNotification('Poda preventiva programada', successBody)
 
       resetPreventiveForm()
       await refreshPrunings()
     } catch (err) {
       const raw = err instanceof Error ? err.message : 'Error desconocido'
       preventiveErrorMsg.value = resolveErrorMessage(raw)
+      addNotification('Error al programar poda', resolveErrorMessage(raw), 'error')
       showBrowserNotification('Error al programar poda', resolveErrorMessage(raw))
     } finally {
       preventiveSubmitting.value = false

@@ -26,7 +26,7 @@ const AUTO_DISMISS_MS: Record<NotificationType, number> = {
   error:   10_000,   // los errores duran más para que el usuario los lea
 }
 
-function addNotification(title: string, body: string, type: NotificationType = 'info') {
+export function addNotification(title: string, body: string, type: NotificationType = 'info') {
   const id = crypto.randomUUID()
   notifications.value.unshift({ id, title, body, time: new Date(), type })
   setTimeout(() => dismissNotification(id), AUTO_DISMISS_MS[type])

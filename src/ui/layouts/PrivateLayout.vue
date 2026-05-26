@@ -1,19 +1,65 @@
 <script setup lang="ts">
-import Sidebar               from '@/ui/components/Sidebar.vue'
-import { useNotifications }  from '@/presentation/composables/useNotifications'
+import { ref, onMounted, onUnmounted } from 'vue'
+import Sidebar              from '@/ui/components/Sidebar.vue'
+import { useNotifications } from '@/presentation/composables/useNotifications'
 
-// Auto-dismiss gestionado dentro del composable al crear cada notificación
 const { notifications, dismissNotification } = useNotifications()
+
+// ── Estado del sidebar ────────────────────────────────────────────────────
+const collapsed    = ref(false)   // desktop: solo iconos
+const mobileOpen   = ref(false)   // mobile: drawer visible
+const isMobile     = ref(false)
+
+function checkMobile() {
+  isMobile.value = window.innerWidth <= 768
+}
+
+onMounted(() => {
+  checkMobile()
+  window.addEventListener('resize', checkMobile)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', checkMobile)
+})
+
+function toggleDesktop() { collapsed.value = !collapsed.value }
+function openMobile()    { mobileOpen.value = true  }
+function closeMobile()   { mobileOpen.value = false }
 </script>
 
 <template>
-  <div class="private-layout">
-    <Sidebar />
+  <div class="private-layout" :class="{ 'private-layout--collapsed': collapsed && !isMobile }">
+
+    <!-- Top bar — solo visible en mobile -->
+    <header v-if="isMobile" class="topbar">
+      <button class="topbar__hamburger" aria-label="Abrir menú" @click="openMobile">
+        ☰
+      </button>
+      <span class="topbar__title">TreePruning</span>
+    </header>
+
+    <!-- Overlay — mobile, cuando el drawer está abierto -->
+    <div
+      v-if="isMobile && mobileOpen"
+      class="sidebar-overlay"
+      @click="closeMobile"
+    />
+
+    <!-- Sidebar -->
+    <Sidebar
+      :collapsed="collapsed && !isMobile"
+      :open="mobileOpen"
+      @toggle="toggleDesktop"
+      @close="closeMobile"
+    />
+
+    <!-- Contenido principal -->
     <main class="private-layout__content">
       <router-view />
     </main>
 
-    <!-- Notificaciones push flotantes (foreground FCM) -->
+    <!-- Notificaciones push flotantes -->
     <div class="notifications-container">
       <transition-group name="toast">
         <div
@@ -38,6 +84,7 @@ const { notifications, dismissNotification } = useNotifications()
 </template>
 
 <style scoped>
+/* ── Layout base ─────────────────────────────────────────────────────────── */
 .private-layout {
   display: flex;
   height: 100vh;
@@ -49,9 +96,24 @@ const { notifications, dismissNotification } = useNotifications()
   overflow-y: auto;
   padding: 1.5rem;
   background: #f0f2f5;
+  transition: margin-left 0.25s ease;
+  min-width: 0; /* evita overflow en flex */
 }
 
-/* ── Toast container ── */
+/* ── Top bar (mobile) ────────────────────────────────────────────────────── */
+.topbar {
+  display: none;
+}
+
+/* ── Overlay (mobile) ────────────────────────────────────────────────────── */
+.sidebar-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 999;
+}
+
+/* ── Toast container ─────────────────────────────────────────────────────── */
 .notifications-container {
   position: fixed;
   bottom: 1.5rem;
@@ -61,11 +123,10 @@ const { notifications, dismissNotification } = useNotifications()
   flex-direction: column-reverse;
   gap: 0.75rem;
   max-width: 340px;
-  width: 100%;
+  width: calc(100% - 3rem);
   pointer-events: none;
 }
 
-/* ── Individual toast ── */
 .notification-toast {
   display: flex;
   align-items: flex-start;
@@ -101,7 +162,6 @@ const { notifications, dismissNotification } = useNotifications()
   font-size: 0.82rem;
   color: #555;
   margin: 0;
-  white-space: pre-wrap;
   word-break: break-word;
 }
 
@@ -116,21 +176,51 @@ const { notifications, dismissNotification } = useNotifications()
   line-height: 1;
   margin-top: 2px;
 }
-.notification-toast__close:hover {
-  color: #555;
-}
+.notification-toast__close:hover { color: #555; }
 
-/* ── Animación de entrada/salida ── */
+/* ── Animación toast ─────────────────────────────────────────────────────── */
 .toast-enter-active,
-.toast-leave-active {
-  transition: all 0.3s ease;
-}
-.toast-enter-from {
-  opacity: 0;
-  transform: translateX(40px);
-}
-.toast-leave-to {
-  opacity: 0;
-  transform: translateX(40px);
+.toast-leave-active { transition: all 0.3s ease; }
+.toast-enter-from   { opacity: 0; transform: translateX(40px); }
+.toast-leave-to     { opacity: 0; transform: translateX(40px); }
+
+/* ── Mobile (≤ 768px) ────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .private-layout {
+    flex-direction: column;
+  }
+
+  .topbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 16px;
+    height: 56px;
+    background: #1a2635;
+    color: #ffffff;
+    flex-shrink: 0;
+    z-index: 100;
+  }
+
+  .topbar__hamburger {
+    background: none;
+    border: none;
+    color: #ffffff;
+    font-size: 1.4rem;
+    cursor: pointer;
+    padding: 4px;
+    line-height: 1;
+  }
+
+  .topbar__title {
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+  }
+
+  .private-layout__content {
+    padding: 1rem;
+    height: calc(100dvh - 56px);
+  }
 }
 </style>

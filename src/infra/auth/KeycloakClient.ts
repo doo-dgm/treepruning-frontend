@@ -3,7 +3,11 @@ import { keycloakStorage } from './keycloakStorage'
 
 const KC_ISSUER = import.meta.env.VITE_KEYCLOAK_ISSUER_URI
 const KC_CLIENT = import.meta.env.VITE_KEYCLOAK_CLIENT
+const API_BASE  = import.meta.env.VITE_API_BASE_URL
 
+// Login va al backend (valida reCAPTCHA + llama a Keycloak internamente)
+const loginEndpoint  = `${API_BASE}/auth/login`
+// Refresh y logout siguen yendo directo a Keycloak
 const tokenEndpoint  = `${KC_ISSUER}/protocol/openid-connect/token`
 const logoutEndpoint = `${KC_ISSUER}/protocol/openid-connect/logout`
 
@@ -33,32 +37,42 @@ function scheduleRefresh(expiresInSeconds: number) {
 export const keycloakClient = {
 
   async login(credentials: { username: string; password: string; recaptchaToken?: string }): Promise<LoginResult> {
-    const response = await fetch(tokenEndpoint, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        grant_type: 'password',
-        client_id:  KC_CLIENT,
-        username:   credentials.username,
-        password:   credentials.password,
-      }),
-    })
-
-    if (!response.ok) {
-      const err = await response.json()
-      return { success: false, message: mapError(err.error) }
+    let response: Response
+    try {
+      response = await fetch(loginEndpoint, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username:       credentials.username,
+          password:       credentials.password,
+          recaptchaToken: credentials.recaptchaToken ?? '',
+        }),
+      })
+    } catch {
+      return { success: false, message: 'Error de conexión. Verifica tu red.' }
     }
 
-    const data    = await response.json()
-    const user    = parseJwt(data.access_token)
+    let body: any
+    try { body = await response.json() } catch { body = null }
+
+    if (!response.ok) {
+      // El backend devuelve ApiResponse<Void> con { status, message, data }
+      const msg = body?.message ?? 'Error de autenticación.'
+      return { success: false, message: msg }
+    }
+
+    // El backend devuelve ApiResponse<LoginResponseDTO>:
+    // { status, message, data: { accessToken, refreshToken, expiresIn } }
+    const dto    = body?.data
+    const user   = parseJwt(dto.accessToken)
     const session: AuthSession = {
-      token:        data.access_token,
-      refreshToken: data.refresh_token,
+      token:        dto.accessToken,
+      refreshToken: dto.refreshToken,
       user,
     }
 
     keycloakStorage.setTokens(session.token, session.refreshToken, session.user)
-    scheduleRefresh(data.expires_in)
+    scheduleRefresh(dto.expiresIn)
 
     return { success: true, session }
   },

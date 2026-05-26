@@ -19,6 +19,7 @@ export default {
     loggingIn:      'Signing in...',
     emptyFields:    'Please enter your username and password.',
     error:          'Authentication error.',
+    captchaNotice:  'Security verification active. The system will confirm you are human.',
   },
 
   gestion: {

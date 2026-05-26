@@ -44,7 +44,6 @@ function onFileChange(event: Event) {
       ref="fileInput"
       type="file"
       accept="image/*"
-      capture="environment"
       multiple
       class="d-none"
       @change="onFileChange"

@@ -26,6 +26,8 @@ function loadGoogleMaps(): Promise<void> {
 
 async function initMap() {
   if (!mapContainer.value || !props.latitude || !props.longitude) return
+  // Evitar doble inicialización
+  if (map) return
 
   await loadGoogleMaps()
 
@@ -58,23 +60,28 @@ function updateMarker() {
   map.panTo(position)
 }
 
-onMounted(() => initMap())
-
-watch(() => [props.latitude, props.longitude], async ([lat, lng]) => {
-  if (!lat || !lng) return
-
-  await nextTick()
-
-  if (map) {
-    updateMarker()
-  } else {
-    initMap()
-  }
-})
+function destroyMap() {
+  marker = null
+  map    = null
+}
 
 onMounted(async () => {
   await nextTick()
-  initMap()
+  await initMap()
+})
+
+onUnmounted(() => {
+  destroyMap()
+})
+
+watch(() => [props.latitude, props.longitude], async ([lat, lng]) => {
+  if (!lat || !lng) return
+  await nextTick()
+  if (map) {
+    updateMarker()
+  } else {
+    await initMap()
+  }
 })
 </script>
 

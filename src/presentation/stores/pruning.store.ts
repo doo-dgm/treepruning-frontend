@@ -5,6 +5,7 @@ import {
   schedulePruningUseCase,
   getPruningsUseCase,
   getTreesBySectorUseCase,
+  uploadPhotoUseCase,
 } from '@/data/composition/pruning.composition'
 import { photoService } from '@/data/services/photo.service'
 
@@ -96,8 +97,9 @@ export const usePruningStore = defineStore('pruning', () => {
       if (photoFiles.value.length > 0) {
         const paths: string[] = []
         for (const file of photoFiles.value) {
-          const res = await photoService.upload(file)
-          paths.push(res.data.path)
+          const path = await uploadPhotoUseCase.execute(file)
+          if (!path) throw new Error('La foto no retornó una ruta válida.')
+          paths.push(path)
         }
         form.value.photographicRecordPath = paths.join(',')
       }

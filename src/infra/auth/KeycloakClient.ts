@@ -35,41 +35,42 @@ export const keycloakClient = {
 
   async login(credentials: { username: string; password: string; recaptchaToken?: string }): Promise<LoginResult> {
   try {
-    const response = await fetch(tokenEndpoint, {
+    const response = await fetch(`${config.apiBaseUrl}/auth/login`, {
       method:  'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        grant_type: 'password',
-        client_id:  KC_CLIENT,
-        username:   credentials.username,
-        password:   credentials.password,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        username:       credentials.username,
+        password:       credentials.password,
+        recaptchaToken: credentials.recaptchaToken ?? '',
       }),
     })
 
     if (!response.ok) {
-      let errorCode = 'unknown'
+      let message = 'Error de autenticación.'
       try {
         const err = await response.json()
-        errorCode = err.error ?? 'unknown'
-      } catch { /* respuesta sin body JSON */ }
-      return { success: false, message: mapError(errorCode) }
+        message = err.message ?? message
+      } catch { /* ignorar */ }
+      return { success: false, message }
     }
 
-    const data    = await response.json()
-    const user    = parseJwt(data.access_token)
+    const data = await response.json()
+    const tokenData = data.data   // ← tu ApiResponse wrapper
+
+    const user    = parseJwt(tokenData.accessToken)
     const session: AuthSession = {
-      token:        data.access_token,
-      refreshToken: data.refresh_token,
+      token:        tokenData.accessToken,
+      refreshToken: tokenData.refreshToken,
       user,
     }
 
     keycloakStorage.setTokens(session.token, session.refreshToken, session.user)
-    scheduleRefresh(data.expires_in)
+    scheduleRefresh(tokenData.expiresIn)
 
     return { success: true, session }
 
   } catch {
-    return { success: false, message: 'Error de conexión con el servidor de autenticación.' }
+    return { success: false, message: 'Error de conexión.' }
   }
 },
 

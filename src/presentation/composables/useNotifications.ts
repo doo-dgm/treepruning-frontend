@@ -1,5 +1,5 @@
 import { ref }                 from 'vue'
-import { useI18n }             from 'vue-i18n'
+import { i18n }               from '@/infra/i18n'
 import { requestNotificationPermission, onForegroundMessage } from '@/infra/notifications/fcm'
 import { notificationService } from '@/data/services/notification.service'
 
@@ -37,16 +37,18 @@ function dismissNotification(id: string) {
 
 export function useNotifications() {
 
-  const { locale } = useI18n()
-
   async function initNotifications() {
     const token = await requestNotificationPermission()
     if (!token) return
 
     fcmToken.value = token
 
+    // i18n.global es el singleton del módulo — no requiere contexto de componente,
+    // por lo que es seguro llamarlo desde store actions y composables fuera de setup()
+    const language = i18n.global.locale.value ?? 'es'
+
     try {
-      await notificationService.registerToken(token, locale.value)
+      await notificationService.registerToken(token, language)
     } catch {
       return
     }

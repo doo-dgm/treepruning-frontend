@@ -118,6 +118,8 @@ export const usePruningStore = defineStore('pruning', () => {
       errorMsg.value = err instanceof Error
         ? `Error al programar poda: ${err.message}`
         : 'Error desconocido'
+      const { addLocalNotification } = useNotifications()
+      addLocalNotification('Error al programar poda', errorMsg.value, 'error')
     } finally {
       submitting.value = false
     }
@@ -229,6 +231,8 @@ export const usePruningStore = defineStore('pruning', () => {
       await refreshPrunings()
     } catch (err) {
       preventiveErrorMsg.value = err instanceof Error ? err.message : 'Error desconocido'
+      const { addLocalNotification } = useNotifications()
+      addLocalNotification('Error al programar poda', preventiveErrorMsg.value, 'error')
     } finally {
       preventiveSubmitting.value = false
     }

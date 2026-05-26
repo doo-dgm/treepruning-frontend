@@ -1,12 +1,16 @@
 import { ref }                 from 'vue'
+import { useI18n }             from 'vue-i18n'
 import { requestNotificationPermission, onForegroundMessage } from '@/infra/notifications/fcm'
 import { notificationService } from '@/data/services/notification.service'
+
+export type NotificationType = 'success' | 'error' | 'warning' | 'info'
 
 export interface AppNotification {
   id:    string
   title: string
   body:  string
   time:  Date
+  type:  NotificationType
 }
 
 // Estado compartido entre todas las instancias del composable
@@ -14,13 +18,17 @@ const notifications  = ref<AppNotification[]>([])
 const fcmToken       = ref<string | null>(null)
 let   unsubscribeFcm: (() => void) | null = null
 
-const AUTO_DISMISS_MS = 6_000
+const AUTO_DISMISS_MS: Record<NotificationType, number> = {
+  success: 6_000,
+  info:    6_000,
+  warning: 8_000,
+  error:   10_000,   // los errores duran más para que el usuario los lea
+}
 
-function addNotification(title: string, body: string) {
+function addNotification(title: string, body: string, type: NotificationType = 'info') {
   const id = crypto.randomUUID()
-  notifications.value.unshift({ id, title, body, time: new Date() })
-  // Auto-dismiss: registrado aquí, justo cuando se crea la notificación
-  setTimeout(() => dismissNotification(id), AUTO_DISMISS_MS)
+  notifications.value.unshift({ id, title, body, time: new Date(), type })
+  setTimeout(() => dismissNotification(id), AUTO_DISMISS_MS[type])
 }
 
 function dismissNotification(id: string) {
@@ -29,6 +37,8 @@ function dismissNotification(id: string) {
 
 export function useNotifications() {
 
+  const { locale } = useI18n()
+
   async function initNotifications() {
     const token = await requestNotificationPermission()
     if (!token) return
@@ -36,18 +46,18 @@ export function useNotifications() {
     fcmToken.value = token
 
     try {
-      await notificationService.registerToken(token)
+      await notificationService.registerToken(token, locale.value)
     } catch {
       return
     }
 
-    // Cancelar listener anterior si existe (evita duplicados si el usuario
-    // hace login/logout/login sin recargar la página)
+    // Cancelar listener anterior (evita duplicados en login/logout/login)
     unsubscribeFcm?.()
     unsubscribeFcm = onForegroundMessage((payload) => {
       addNotification(
         payload.notification?.title ?? 'Notificación',
         payload.notification?.body  ?? '',
+        'success',
       )
     })
   }
@@ -69,6 +79,7 @@ export function useNotifications() {
     initNotifications,
     clearNotifications,
     dismissNotification,
+    /** Notificación local inmediata (sin FCM) — útil para confirmaciones y errores */
     addLocalNotification: addNotification,
   }
 }

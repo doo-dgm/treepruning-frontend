@@ -83,12 +83,20 @@ export const useAuthStore = defineStore('auth', () => {
         try { await initNotifications() } catch {}
       } else {
         loginAttempts.value++
+        const { addLocalNotification } = useNotifications()
+        addLocalNotification(
+          'Error de autenticación',
+          result.message ?? 'Usuario o contraseña incorrectos.',
+          'error',
+        )
       }
 
       return result
 
     } catch {
       loginAttempts.value++
+      const { addLocalNotification } = useNotifications()
+      addLocalNotification('Error de autenticación', 'Error de conexión.', 'error')
       return { success: false, message: 'Error de autenticación.' }
     }
 }

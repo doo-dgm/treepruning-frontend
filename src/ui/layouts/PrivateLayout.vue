@@ -66,8 +66,14 @@ function closeMobile()   { mobileOpen.value = false }
           v-for="n in notifications"
           :key="n.id"
           class="notification-toast"
+          :class="`notification-toast--${n.type}`"
         >
-          <div class="notification-toast__icon">🌳</div>
+          <div class="notification-toast__icon">
+            <span v-if="n.type === 'error'">❌</span>
+            <span v-else-if="n.type === 'warning'">⚠️</span>
+            <span v-else-if="n.type === 'success'">🌳</span>
+            <span v-else>ℹ️</span>
+          </div>
           <div class="notification-toast__body">
             <strong class="notification-toast__title">{{ n.title }}</strong>
             <p class="notification-toast__text">{{ n.body }}</p>
@@ -177,6 +183,12 @@ function closeMobile()   { mobileOpen.value = false }
   margin-top: 2px;
 }
 .notification-toast__close:hover { color: #555; }
+
+/* ── Variantes por tipo ──────────────────────────────────────────────────── */
+.notification-toast--success { border-left-color: #198754; }
+.notification-toast--error   { border-left-color: #dc3545; }
+.notification-toast--warning { border-left-color: #fd7e14; }
+.notification-toast--info    { border-left-color: #0d6efd; }
 
 /* ── Animación toast ─────────────────────────────────────────────────────── */
 .toast-enter-active,

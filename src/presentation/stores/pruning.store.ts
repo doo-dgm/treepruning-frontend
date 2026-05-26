@@ -1,5 +1,5 @@
-import { defineStore } from 'pinia'
-import { ref }         from 'vue'
+import { defineStore }    from 'pinia'
+import { ref }            from 'vue'
 import {
   getPruningFormDataUseCase,
   schedulePruningUseCase,
@@ -8,6 +8,7 @@ import {
   uploadPhotoUseCase,
   schedulePreventiveUseCase,
 } from '@/data/composition/pruning.composition'
+import { useNotifications } from '@/presentation/composables/useNotifications'
 import { photoService } from '@/data/services/photo.service'
 
 import { emptyForm, emptyBatchForm }             from '@/domain/pruning/PruningEntity'
@@ -216,6 +217,14 @@ export const usePruningStore = defineStore('pruning', () => {
       })
 
       preventiveSuccessMsg.value = `${count} poda(s) preventiva(s) programada(s) exitosamente.`
+
+      // Notificación local inmediata — confirma al usuario sin depender de FCM
+      const { addLocalNotification } = useNotifications()
+      addLocalNotification(
+        'Poda preventiva programada',
+        `${count} poda(s) programada(s) para el ${preventiveForm.value.plannedDate}.`,
+      )
+
       resetPreventiveForm()
       await refreshPrunings()
     } catch (err) {

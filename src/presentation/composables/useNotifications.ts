@@ -69,5 +69,6 @@ export function useNotifications() {
     initNotifications,
     clearNotifications,
     dismissNotification,
+    addLocalNotification: addNotification,
   }
 }

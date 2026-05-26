@@ -8,7 +8,7 @@ import {
   uploadPhotoUseCase,
   schedulePreventiveUseCase,
 } from '@/data/composition/pruning.composition'
-import { useNotifications } from '@/presentation/composables/useNotifications'
+import { showBrowserNotification } from '@/infra/notifications/showBrowserNotification'
 import { photoService } from '@/data/services/photo.service'
 
 import { emptyForm, emptyBatchForm }             from '@/domain/pruning/PruningEntity'
@@ -118,8 +118,7 @@ export const usePruningStore = defineStore('pruning', () => {
       errorMsg.value = err instanceof Error
         ? `Error al programar poda: ${err.message}`
         : 'Error desconocido'
-      const { addLocalNotification } = useNotifications()
-      addLocalNotification('Error al programar poda', errorMsg.value, 'error')
+      showBrowserNotification('Error al programar poda', errorMsg.value)
     } finally {
       submitting.value = false
     }
@@ -220,9 +219,7 @@ export const usePruningStore = defineStore('pruning', () => {
 
       preventiveSuccessMsg.value = `${count} poda(s) preventiva(s) programada(s) exitosamente.`
 
-      // Notificación local inmediata — confirma al usuario sin depender de FCM
-      const { addLocalNotification } = useNotifications()
-      addLocalNotification(
+      showBrowserNotification(
         'Poda preventiva programada',
         `${count} poda(s) programada(s) para el ${preventiveForm.value.plannedDate}.`,
       )
@@ -231,8 +228,7 @@ export const usePruningStore = defineStore('pruning', () => {
       await refreshPrunings()
     } catch (err) {
       preventiveErrorMsg.value = err instanceof Error ? err.message : 'Error desconocido'
-      const { addLocalNotification } = useNotifications()
-      addLocalNotification('Error al programar poda', preventiveErrorMsg.value, 'error')
+      showBrowserNotification('Error al programar poda', preventiveErrorMsg.value)
     } finally {
       preventiveSubmitting.value = false
     }

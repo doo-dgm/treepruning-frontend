@@ -100,8 +100,6 @@ async function handleSubmitPreventive() {
         </div>
 
         <form v-else @submit.prevent="handleSubmitPreventive">
-          <output v-if="preventiveSuccessMsg" class="alert alert-success py-2 d-block">{{ preventiveSuccessMsg }}</output>
-          <output v-if="preventiveErrorMsg"   class="alert alert-danger  py-2 d-block">{{ preventiveErrorMsg }}</output>
 
           <div class="row g-3">
 

@@ -1,6 +1,7 @@
 import { ref }                 from 'vue'
 import { i18n }               from '@/infra/i18n'
 import { requestNotificationPermission, onForegroundMessage } from '@/infra/notifications/fcm'
+import { showBrowserNotification } from '@/infra/notifications/showBrowserNotification'
 import { notificationService } from '@/data/services/notification.service'
 
 export type NotificationType = 'success' | 'error' | 'warning' | 'info'
@@ -61,17 +62,7 @@ export function useNotifications() {
       // comportamiento que en background (notificación del OS, no un toast in-app).
       const title = payload.notification?.title ?? 'TreePruning'
       const body  = payload.notification?.body  ?? ''
-      navigator.serviceWorker.ready
-        .then(registration => {
-          registration.showNotification(title, {
-            body,
-            icon: '/arbol.png',
-          })
-        })
-        .catch(() => {
-          // Fallback: si el SW no está disponible, mostrar toast in-app
-          addNotification(title, body, 'info')
-        })
+      showBrowserNotification(title, body)
     })
   }
 

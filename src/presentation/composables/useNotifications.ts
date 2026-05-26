@@ -1,6 +1,6 @@
-import { ref }                           from 'vue'
+import { ref }                 from 'vue'
 import { requestNotificationPermission, onForegroundMessage } from '@/infra/notifications/fcm'
-import { notificationService }           from '@/data/services/notification.service'
+import { notificationService } from '@/data/services/notification.service'
 
 export interface AppNotification {
   id:    string
@@ -9,8 +9,23 @@ export interface AppNotification {
   time:  Date
 }
 
-const notifications = ref<AppNotification[]>([])
-const fcmToken      = ref<string | null>(null)
+// Estado compartido entre todas las instancias del composable
+const notifications  = ref<AppNotification[]>([])
+const fcmToken       = ref<string | null>(null)
+let   unsubscribeFcm: (() => void) | null = null
+
+const AUTO_DISMISS_MS = 6_000
+
+function addNotification(title: string, body: string) {
+  const id = crypto.randomUUID()
+  notifications.value.unshift({ id, title, body, time: new Date() })
+  // Auto-dismiss: registrado aquí, justo cuando se crea la notificación
+  setTimeout(() => dismissNotification(id), AUTO_DISMISS_MS)
+}
+
+function dismissNotification(id: string) {
+  notifications.value = notifications.value.filter(n => n.id !== id)
+}
 
 export function useNotifications() {
 
@@ -26,27 +41,26 @@ export function useNotifications() {
       return
     }
 
-    onForegroundMessage((payload) => {
-      const notification: AppNotification = {
-        id:    crypto.randomUUID(),
-        title: payload.notification?.title ?? 'Notificación',
-        body:  payload.notification?.body  ?? '',
-        time:  new Date(),
-      }
-      notifications.value.unshift(notification)
+    // Cancelar listener anterior si existe (evita duplicados si el usuario
+    // hace login/logout/login sin recargar la página)
+    unsubscribeFcm?.()
+    unsubscribeFcm = onForegroundMessage((payload) => {
+      addNotification(
+        payload.notification?.title ?? 'Notificación',
+        payload.notification?.body  ?? '',
+      )
     })
   }
 
   async function clearNotifications() {
+    unsubscribeFcm?.()
+    unsubscribeFcm = null
+
     if (fcmToken.value) {
-      await notificationService.unregisterToken(fcmToken.value)
+      try { await notificationService.unregisterToken(fcmToken.value) } catch { /* best-effort */ }
       fcmToken.value = null
     }
     notifications.value = []
-  }
-
-  function dismissNotification(id: string) {
-    notifications.value = notifications.value.filter(n => n.id !== id)
   }
 
   return {

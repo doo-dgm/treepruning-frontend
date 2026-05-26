@@ -1,16 +1,9 @@
 <script setup lang="ts">
-import { watch }             from 'vue'
 import Sidebar               from '@/ui/components/Sidebar.vue'
 import { useNotifications }  from '@/presentation/composables/useNotifications'
 
+// Auto-dismiss gestionado dentro del composable al crear cada notificación
 const { notifications, dismissNotification } = useNotifications()
-
-// Auto-dismiss cada notificación después de 6 segundos
-watch(notifications, (list) => {
-  const newest = list[0]
-  if (!newest) return
-  setTimeout(() => dismissNotification(newest.id), 6000)
-}, { deep: false })
 </script>
 
 <template>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, onMounted, onUnmounted } from 'vue'
+import { ref, watch, onMounted, onUnmounted, nextTick } from 'vue'
 
 const props = defineProps<{
   latitude:  number | null
@@ -60,19 +60,21 @@ function updateMarker() {
 
 onMounted(() => initMap())
 
-// Cuando cambia el árbol seleccionado actualiza el marcador
-watch(() => [props.latitude, props.longitude], ([lat, lng]) => {
-  if (lat && lng && map) {
+watch(() => [props.latitude, props.longitude], async ([lat, lng]) => {
+  if (!lat || !lng) return
+
+  await nextTick()
+
+  if (map) {
     updateMarker()
-  } else if (lat && lng) {
+  } else {
     initMap()
   }
 })
 
-onUnmounted(() => {
-  marker?.setMap(null)
-  map    = null
-  marker = null
+onMounted(async () => {
+  await nextTick()
+  initMap()
 })
 </script>
 

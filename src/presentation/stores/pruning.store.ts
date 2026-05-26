@@ -97,7 +97,7 @@ export const usePruningStore = defineStore('pruning', () => {
         const paths: string[] = []
         for (const file of photoFiles.value) {
           const res = await photoService.upload(file)
-          paths.push(res.data.data.path)
+          paths.push(res.data.path)
         }
         form.value.photographicRecordPath = paths.join(',')
       }
@@ -133,7 +133,7 @@ export const usePruningStore = defineStore('pruning', () => {
       loadingPhotos.value = true
       try {
         const res = await photoService.getUrls(pruning.id)
-        selectedPruningPhotos.value = res.data.data?.urls ?? []
+        selectedPruningPhotos.value = res.data?.urls ?? []
       } catch {
         photoLoadError.value = 'Error al cargar imágenes'
       } finally {

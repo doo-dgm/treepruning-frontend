@@ -125,4 +125,8 @@ export default {
     notFound:      'Resource not found.',
     server:        'Internal server error.',
   },
+
+  lang: {
+    label: 'Language',
+  },
 }

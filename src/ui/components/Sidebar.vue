@@ -1,16 +1,30 @@
 <!-- src/ui/components/SidebarNav.vue -->
 <script setup lang="ts">
-import { computed }       from 'vue'
-import { useRouter }      from 'vue-router'
-import { useI18n }        from 'vue-i18n'
-import { useAuthStore }   from '@/presentation/stores/auth'
-import { usePermissions } from '@/presentation/composables/usePermissions'
+import { computed, onMounted } from 'vue'
+import { useRouter }           from 'vue-router'
+import { useI18n }             from 'vue-i18n'
+import { useAuthStore }        from '@/presentation/stores/auth'
+import { usePermissions }      from '@/presentation/composables/usePermissions'
 import logo from '@/assets/arbol.png'
 
-const { t }           = useI18n()
+const { t, locale }   = useI18n()
 const router          = useRouter()
 const { logout }      = useAuthStore()
 const { hasAnyRole }  = usePermissions()
+
+const LANG_KEY = 'tree-pruning-lang'
+
+function setLocale(lang: string) {
+  locale.value = lang
+  localStorage.setItem(LANG_KEY, lang)
+}
+
+onMounted(() => {
+  const saved = localStorage.getItem(LANG_KEY)
+  if (saved === 'es' || saved === 'en') {
+    locale.value = saved
+  }
+})
 
 const nav = [
   { to: '/administracion', labelKey: 'nav.administration', icon: '🗂️', roles: ['MANAGER', 'ADMIN']           },
@@ -50,6 +64,23 @@ async function handleLogout() {
     </nav>
 
     <div class="sidebar__footer">
+      <!-- Selector de idioma -->
+      <div class="sidebar__lang">
+        <span class="sidebar__lang-label">{{ t('lang.label') }}</span>
+        <div class="sidebar__lang-toggle">
+          <button
+            class="sidebar__lang-btn"
+            :class="{ 'sidebar__lang-btn--active': locale === 'es' }"
+            @click="setLocale('es')"
+          >ES</button>
+          <button
+            class="sidebar__lang-btn"
+            :class="{ 'sidebar__lang-btn--active': locale === 'en' }"
+            @click="setLocale('en')"
+          >EN</button>
+        </div>
+      </div>
+
       <button class="sidebar__logout" @click="handleLogout">
         {{ t('auth.logout') }}
       </button>
@@ -144,5 +175,50 @@ async function handleLogout() {
 
 .sidebar__logout:hover {
   background: #e02c18;
+}
+
+/* ── Selector de idioma ───────────────────────────── */
+.sidebar__lang {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.sidebar__lang-label {
+  font-size: 0.78rem;
+  color: #8fa3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.sidebar__lang-toggle {
+  display: flex;
+  background: #0f1c29;
+  border-radius: 6px;
+  padding: 2px;
+  gap: 2px;
+}
+
+.sidebar__lang-btn {
+  padding: 3px 10px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: #8fa3b8;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  letter-spacing: 0.5px;
+  transition: background 0.15s, color 0.15s;
+}
+
+.sidebar__lang-btn:hover {
+  color: #ffffff;
+}
+
+.sidebar__lang-btn--active {
+  background: #1abc9c;
+  color: #ffffff;
 }
 </style>

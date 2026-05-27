@@ -27,9 +27,8 @@ let gMarkers: google.maps.marker.AdvancedMarkerElement[]               = []     
 function loadGoogleMaps(): Promise<void> {
   return new Promise((resolve) => {
     if (window.google?.maps?.marker) return resolve()
-    // loading=async silencia el warning "loaded without loading=async"
     const script    = document.createElement('script')
-    script.src      = `https://maps.googleapis.com/maps/api/js?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}&libraries=marker&loading=async`
+    script.src      = `https://maps.googleapis.com/maps/api/js?key=${config.googleMapsApiKey}&libraries=marker`
     script.async    = true
     script.defer    = true
     script.onload   = () => resolve()

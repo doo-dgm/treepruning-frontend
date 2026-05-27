@@ -103,7 +103,7 @@ async function handleLogout() {
 
       <!-- Botón colapsar/expandir — solo desktop -->
       <button class="sidebar__toggle-btn" :title="collapsed ? 'Expandir' : 'Colapsar'" @click="emit('toggle')">
-        {{ collapsed ? '▶' : '◀' }}
+        ☰
       </button>
     </div>
   </aside>

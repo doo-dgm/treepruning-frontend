@@ -4,6 +4,7 @@ import { useRouter }           from 'vue-router'
 import { useI18n }             from 'vue-i18n'
 import { useAuthStore }        from '@/presentation/stores/auth'
 import { usePermissions }      from '@/presentation/composables/usePermissions'
+import { useNotifications }    from '@/presentation/composables/useNotifications'
 import logo from '@/assets/arbol.png'
 
 const props = defineProps<{
@@ -16,16 +17,20 @@ const emit = defineEmits<{
   close:  []   // cerrar drawer en mobile
 }>()
 
-const { t, locale }   = useI18n()
-const router          = useRouter()
-const { logout }      = useAuthStore()
-const { hasAnyRole }  = usePermissions()
+const { t, locale }           = useI18n()
+const router                  = useRouter()
+const { logout }              = useAuthStore()
+const { hasAnyRole }          = usePermissions()
+const { updateTokenLanguage } = useNotifications()
 
 const LANG_KEY = 'tree-pruning-lang'
 
 function setLocale(lang: string) {
   locale.value = lang
   localStorage.setItem(LANG_KEY, lang)
+  // Sincronizar el idioma en el token FCM para que las notificaciones push
+  // lleguen en el idioma correcto desde el backend.
+  updateTokenLanguage(lang)
 }
 
 onMounted(() => {

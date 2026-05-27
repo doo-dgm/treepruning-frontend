@@ -77,12 +77,25 @@ export function useNotifications() {
     notifications.value = []
   }
 
+  /** Sincroniza el idioma del token FCM con el nuevo locale del usuario.
+   *  Llamar cada vez que el usuario cambia el idioma en la UI.
+   *  Es un best-effort: si no hay token registrado se ignora silenciosamente. */
+  async function updateTokenLanguage(language: string) {
+    if (!fcmToken.value) return
+    try {
+      await notificationService.registerToken(fcmToken.value, language)
+    } catch {
+      /* best-effort — no interrumpir el cambio de idioma por un fallo de red */
+    }
+  }
+
   return {
     notifications,
     fcmToken,
     initNotifications,
     clearNotifications,
     dismissNotification,
+    updateTokenLanguage,
     /** Notificación local inmediata (sin FCM) — útil para confirmaciones y errores */
     addLocalNotification: addNotification,
   }

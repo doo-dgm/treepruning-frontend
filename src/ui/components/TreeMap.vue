@@ -18,17 +18,17 @@ const props = defineProps<{
 }>()
 
 const mapContainer = ref<HTMLDivElement | null>(null)
-let map:      google.maps.Map                                   | null = null
-let marker:   google.maps.marker.AdvancedMarkerElement          | null = null   // single-mode
-let gMarkers: google.maps.marker.AdvancedMarkerElement[]               = []     // multi-mode
+let map:      google.maps.Map    | null = null
+let marker:   google.maps.Marker | null = null   // single-mode
+let gMarkers: google.maps.Marker[]      = []     // multi-mode
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function loadGoogleMaps(): Promise<void> {
   return new Promise((resolve) => {
-    if (window.google?.maps?.marker) return resolve()
+    if (window.google?.maps) return resolve()
     const script    = document.createElement('script')
-    script.src      = `https://maps.googleapis.com/maps/api/js?key=${config.googleMapsApiKey}&libraries=marker`
+    script.src      = `https://maps.googleapis.com/maps/api/js?key=${config.googleMapsApiKey}`
     script.async    = true
     script.defer    = true
     script.onload   = () => resolve()
@@ -36,16 +36,15 @@ function loadGoogleMaps(): Promise<void> {
   })
 }
 
-const isMultiMode  = () => Array.isArray(props.markers)
-const isSingleMode = () => !isMultiMode() && !!props.latitude && !!props.longitude
-const hasContent   = () => isMultiMode()
+const isMultiMode = () => Array.isArray(props.markers)
+const hasContent  = () => isMultiMode()
   ? (props.markers!.length > 0)
   : (!!props.latitude && !!props.longitude)
 
 // ── Multi-marker helpers ──────────────────────────────────────────────────────
 
 function clearMultiMarkers() {
-  gMarkers.forEach(m => { m.map = null })
+  gMarkers.forEach(m => m.setMap(null))
   gMarkers = []
 }
 
@@ -56,19 +55,15 @@ function renderMultiMarkers(list: MapMarker[]) {
   const bounds = new google.maps.LatLngBounds()
 
   list.forEach((m, i) => {
-    const pos = new google.maps.LatLng(m.lat, m.lng)
-
-    const pin = new google.maps.marker.PinElement({
-      background:  '#198754',
-      borderColor: '#145c38',
-      glyphColor:  '#ffffff',
-    })
-
-    const gm = new google.maps.marker.AdvancedMarkerElement({
+    const pos = { lat: m.lat, lng: m.lng }
+    const gm  = new google.maps.Marker({
       position: pos,
       map,
-      title:   m.label ?? `Árbol ${i + 1}`,
-      content: pin.element,
+      title: m.label ?? `Árbol ${i + 1}`,
+      icon: {
+        url:        'https://maps.google.com/mapfiles/ms/icons/green-dot.png',
+        scaledSize: new google.maps.Size(40, 40),
+      },
     })
     gMarkers.push(gm)
     bounds.extend(pos)
@@ -86,7 +81,7 @@ function renderMultiMarkers(list: MapMarker[]) {
 
 async function initMap() {
   if (!mapContainer.value || !hasContent()) return
-  if (map) return   // evitar doble-init
+  if (map) return
 
   await loadGoogleMaps()
 
@@ -94,13 +89,9 @@ async function initMap() {
     ? { lat: props.markers![0].lat, lng: props.markers![0].lng }
     : { lat: props.latitude!,       lng: props.longitude! }
 
-  // mapId es obligatorio para AdvancedMarkerElement.
-  // Usa tu Map ID de Google Cloud Console en produccion;
-  // DEMO_MAP_ID funciona en desarrollo sin configuracion adicional.
   map = new google.maps.Map(mapContainer.value, {
     center,
     zoom:              16,
-    mapId:             (config.googleMapsMapId && !config.googleMapsMapId.startsWith('__')) ? config.googleMapsMapId : 'DEMO_MAP_ID',
     disableDefaultUI:  true,
     zoomControl:       true,
     mapTypeControl:    false,
@@ -110,16 +101,14 @@ async function initMap() {
   if (isMultiMode()) {
     renderMultiMarkers(props.markers!)
   } else {
-    const pin = new google.maps.marker.PinElement({
-      background:  '#198754',
-      borderColor: '#145c38',
-      glyphColor:  '#ffffff',
-    })
-    marker = new google.maps.marker.AdvancedMarkerElement({
+    marker = new google.maps.Marker({
       position: center,
       map,
-      title:   props.label ?? 'Árbol',
-      content: pin.element,
+      title: props.label ?? 'Árbol',
+      icon: {
+        url:        'https://maps.google.com/mapfiles/ms/icons/green-dot.png',
+        scaledSize: new google.maps.Size(40, 40),
+      },
     })
   }
 }
@@ -127,14 +116,14 @@ async function initMap() {
 function updateSingleMarker() {
   if (!map || !marker || !props.latitude || !props.longitude) return
   const position = { lat: props.latitude, lng: props.longitude }
-  marker.position = position
+  marker.setPosition(position)
   map.panTo(position)
 }
 
 function destroyMap() {
   clearMultiMarkers()
-  if (marker) { marker.map = null; marker = null }
-  map = null
+  marker = null
+  map    = null
 }
 
 // ── Vue hooks ─────────────────────────────────────────────────────────────────

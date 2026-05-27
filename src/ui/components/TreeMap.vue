@@ -17,17 +17,18 @@ const props = defineProps<{
 }>()
 
 const mapContainer = ref<HTMLDivElement | null>(null)
-let map:      google.maps.Map    | null = null
-let marker:   google.maps.Marker | null = null   // single-mode
-let gMarkers: google.maps.Marker[]      = []     // multi-mode
+let map:      google.maps.Map                                   | null = null
+let marker:   google.maps.marker.AdvancedMarkerElement          | null = null   // single-mode
+let gMarkers: google.maps.marker.AdvancedMarkerElement[]               = []     // multi-mode
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function loadGoogleMaps(): Promise<void> {
   return new Promise((resolve) => {
-    if (window.google?.maps) return resolve()
+    if (window.google?.maps?.marker) return resolve()
+    // loading=async silencia el warning "loaded without loading=async"
     const script    = document.createElement('script')
-    script.src      = `https://maps.googleapis.com/maps/api/js?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}`
+    script.src      = `https://maps.googleapis.com/maps/api/js?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}&libraries=marker&loading=async`
     script.async    = true
     script.defer    = true
     script.onload   = () => resolve()
@@ -44,7 +45,7 @@ const hasContent   = () => isMultiMode()
 // ── Multi-marker helpers ──────────────────────────────────────────────────────
 
 function clearMultiMarkers() {
-  gMarkers.forEach(m => m.setMap(null))
+  gMarkers.forEach(m => { m.map = null })
   gMarkers = []
 }
 
@@ -55,15 +56,19 @@ function renderMultiMarkers(list: MapMarker[]) {
   const bounds = new google.maps.LatLngBounds()
 
   list.forEach((m, i) => {
-    const pos = { lat: m.lat, lng: m.lng }
-    const gm  = new google.maps.Marker({
+    const pos = new google.maps.LatLng(m.lat, m.lng)
+
+    const pin = new google.maps.marker.PinElement({
+      background:  '#198754',
+      borderColor: '#145c38',
+      glyphColor:  '#ffffff',
+    })
+
+    const gm = new google.maps.marker.AdvancedMarkerElement({
       position: pos,
       map,
-      title: m.label ?? `Árbol ${i + 1}`,
-      icon: {
-        url:        'https://maps.google.com/mapfiles/ms/icons/green-dot.png',
-        scaledSize: new google.maps.Size(40, 40),
-      },
+      title:   m.label ?? `Árbol ${i + 1}`,
+      content: pin.element,
     })
     gMarkers.push(gm)
     bounds.extend(pos)
@@ -89,9 +94,13 @@ async function initMap() {
     ? { lat: props.markers![0].lat, lng: props.markers![0].lng }
     : { lat: props.latitude!,       lng: props.longitude! }
 
+  // mapId es obligatorio para AdvancedMarkerElement.
+  // Usa tu Map ID de Google Cloud Console en produccion;
+  // DEMO_MAP_ID funciona en desarrollo sin configuracion adicional.
   map = new google.maps.Map(mapContainer.value, {
     center,
     zoom:              16,
+    mapId:             import.meta.env.VITE_GOOGLE_MAPS_MAP_ID ?? 'DEMO_MAP_ID',
     disableDefaultUI:  true,
     zoomControl:       true,
     mapTypeControl:    false,
@@ -101,14 +110,16 @@ async function initMap() {
   if (isMultiMode()) {
     renderMultiMarkers(props.markers!)
   } else {
-    marker = new google.maps.Marker({
+    const pin = new google.maps.marker.PinElement({
+      background:  '#198754',
+      borderColor: '#145c38',
+      glyphColor:  '#ffffff',
+    })
+    marker = new google.maps.marker.AdvancedMarkerElement({
       position: center,
       map,
-      title: props.label ?? 'Árbol',
-      icon: {
-        url:        'https://maps.google.com/mapfiles/ms/icons/green-dot.png',
-        scaledSize: new google.maps.Size(40, 40),
-      },
+      title:   props.label ?? 'Árbol',
+      content: pin.element,
     })
   }
 }
@@ -116,14 +127,14 @@ async function initMap() {
 function updateSingleMarker() {
   if (!map || !marker || !props.latitude || !props.longitude) return
   const position = { lat: props.latitude, lng: props.longitude }
-  marker.setPosition(position)
+  marker.position = position
   map.panTo(position)
 }
 
 function destroyMap() {
   clearMultiMarkers()
-  marker = null
-  map    = null
+  if (marker) { marker.map = null; marker = null }
+  map = null
 }
 
 // ── Vue hooks ─────────────────────────────────────────────────────────────────
@@ -149,8 +160,18 @@ watch(() => [props.latitude, props.longitude], async ([lat, lng]) => {
 watch(() => props.markers, async (newMarkers) => {
   if (!Array.isArray(newMarkers)) return
   await nextTick()
+
+  if (newMarkers.length === 0) {
+    // Lista vaciada (reset del formulario): liberar instancia ahora.
+    // v-if retira el contenedor del DOM pero NO dispara onUnmounted,
+    // por lo que sin esta llamada map quedaria no-null y el siguiente
+    // initMap() retornaria sin hacer nada, dejando el div en blanco.
+    destroyMap()
+    return
+  }
+
   if (!map) {
-    if (newMarkers.length > 0) await initMap()
+    await initMap()
   } else {
     renderMultiMarkers(newMarkers)
   }

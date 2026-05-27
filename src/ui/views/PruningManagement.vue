@@ -292,6 +292,7 @@ async function handleSubmitPreventive() {
                   >
                     {{ t('pruning.detail.view') }}
                   </button>
+                  console.log('Detalle de poda', p) <!-- TODO: eliminar -->
                 </td>
               </tr>
             </tbody>

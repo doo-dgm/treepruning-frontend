@@ -8,7 +8,6 @@ declare const __VITE_FIREBASE_MESSAGING_SENDER_ID__: string
 declare const __VITE_FIREBASE_APP_ID__:              string
 declare const __VITE_FIREBASE_VAPID_KEY__:           string
 declare const __VITE_GOOGLE_MAPS_API_KEY__:          string
-declare const __VITE_GOOGLE_MAPS_MAP_ID__:           string
 declare const __VITE_RECAPTCHA_SITE_KEY__:           string
 declare const __VITE_STRAPI_URL__:                   string
 
@@ -23,7 +22,6 @@ export const config = {
   firebaseAppId:             __VITE_FIREBASE_APP_ID__,
   firebaseVapidKey:          __VITE_FIREBASE_VAPID_KEY__,
   googleMapsApiKey:          __VITE_GOOGLE_MAPS_API_KEY__,
-  googleMapsMapId:           __VITE_GOOGLE_MAPS_MAP_ID__,
   recaptchaSiteKey:          __VITE_RECAPTCHA_SITE_KEY__,
   strapiUrl:                 __VITE_STRAPI_URL__,
 }

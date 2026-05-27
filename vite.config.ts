@@ -36,7 +36,6 @@ export default defineConfig(({ mode }) => {
       __VITE_FIREBASE_APP_ID__:              JSON.stringify('__VITE_FIREBASE_APP_ID__'),
       __VITE_FIREBASE_VAPID_KEY__:           JSON.stringify('__VITE_FIREBASE_VAPID_KEY__'),
       __VITE_GOOGLE_MAPS_API_KEY__:          JSON.stringify('__VITE_GOOGLE_MAPS_API_KEY__'),
-      __VITE_GOOGLE_MAPS_MAP_ID__:           JSON.stringify('__VITE_GOOGLE_MAPS_MAP_ID__'),
       __VITE_RECAPTCHA_SITE_KEY__:           JSON.stringify('__VITE_RECAPTCHA_SITE_KEY__'),
       __VITE_STRAPI_URL__:                   JSON.stringify('__VITE_STRAPI_URL__'),
     },

@@ -100,7 +100,7 @@ async function initMap() {
   map = new google.maps.Map(mapContainer.value, {
     center,
     zoom:              16,
-    mapId:             config.googleMapsMapId || 'DEMO_MAP_ID',
+    mapId:             (config.googleMapsMapId && !config.googleMapsMapId.startsWith('__')) ? config.googleMapsMapId : 'DEMO_MAP_ID',
     disableDefaultUI:  true,
     zoomControl:       true,
     mapTypeControl:    false,

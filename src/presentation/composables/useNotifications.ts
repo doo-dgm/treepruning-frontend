@@ -46,7 +46,14 @@ export function useNotifications() {
 
     // i18n.global es el singleton del módulo — no requiere contexto de componente,
     // por lo que es seguro llamarlo desde store actions y composables fuera de setup()
-    const language = i18n.global.locale.value ?? 'es'
+    // Lee el idioma guardado en localStorage (misma clave que Sidebar.vue usa)
+    // para que el token quede registrado con la preferencia real del usuario
+    // incluso en el primer login o después de un refresh de página,
+    // cuando Sidebar.vue todavía no ha ejecutado su onMounted.
+    const savedLang = localStorage.getItem('tree-pruning-lang')
+    const language  = (savedLang === 'es' || savedLang === 'en')
+      ? savedLang
+      : (i18n.global.locale.value ?? 'es')
 
     try {
       await notificationService.registerToken(token, language)

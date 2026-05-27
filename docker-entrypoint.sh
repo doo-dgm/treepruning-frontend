@@ -17,6 +17,7 @@ for f in "$ASSETS"/*.js; do
     -e "s|__VITE_FIREBASE_VAPID_KEY__|${VITE_FIREBASE_VAPID_KEY:-}|g" \
     -e "s|__VITE_RECAPTCHA_SITE_KEY__|${VITE_RECAPTCHA_SITE_KEY:-}|g" \
     -e "s|__VITE_GOOGLE_MAPS_API_KEY__|${VITE_GOOGLE_MAPS_API_KEY:-}|g" \
+    -e "s|__VITE_GOOGLE_MAPS_MAP_ID__|${VITE_GOOGLE_MAPS_MAP_ID:-}|g" \
     -e "s|__VITE_STRAPI_URL__|${VITE_STRAPI_URL:-}|g" \
     "$f"
 done

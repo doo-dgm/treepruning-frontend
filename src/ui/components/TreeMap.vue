@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, onMounted, onUnmounted, nextTick } from 'vue'
+import { config } from '@/infra/config'
 
 export interface MapMarker {
   lat:    number
@@ -100,7 +101,7 @@ async function initMap() {
   map = new google.maps.Map(mapContainer.value, {
     center,
     zoom:              16,
-    mapId:             import.meta.env.VITE_GOOGLE_MAPS_MAP_ID ?? 'DEMO_MAP_ID',
+    mapId:             config.googleMapsMapId || 'DEMO_MAP_ID',
     disableDefaultUI:  true,
     zoomControl:       true,
     mapTypeControl:    false,

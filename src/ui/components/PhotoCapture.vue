@@ -1,94 +1,148 @@
 <!-- src/ui/components/PhotoCapture.vue -->
 <script setup lang="ts">
-import { ref }     from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
 
 const props = defineProps<{
-  modelValue:    string        // ruta devuelta por el backend
-  uploading:     boolean
+  files: File[]       // archivos seleccionados (aun no subidos)
+  uploading: boolean  // true durante el submit
 }>()
 
 const emit = defineEmits<{
-  (e: 'update:modelValue', value: string): void
-  (e: 'capture', file: File): void
+  (e: 'add',    file:  File):   void
+  (e: 'remove', index: number): void
 }>()
 
-const cameraInput = ref<HTMLInputElement | null>(null)
-const preview     = ref<string | null>(null)
+const fileInput = ref<HTMLInputElement | null>(null)
 
-function openCamera() {
-  cameraInput.value?.click()
+const previews = computed(() =>
+  props.files.map(f => URL.createObjectURL(f))
+)
+
+function openPicker() {
+  fileInput.value?.click()
 }
 
 function onFileChange(event: Event) {
-  const file = (event.target as HTMLInputElement).files?.[0]
-  if (!file) return
-
-  // Preview local inmediato
-  preview.value = URL.createObjectURL(file)
-
-  // Emite el archivo para que el store lo suba
-  emit('capture', file)
+  const selected = (event.target as HTMLInputElement).files
+  if (!selected) return
+  for (const file of Array.from(selected)) {
+    emit('add', file)
+  }
+  // Resetea el input para poder agregar el mismo archivo de nuevo si el usuario lo desea
+  if (fileInput.value) fileInput.value.value = ''
 }
 </script>
 
 <template>
   <div class="photo-capture">
 
-    <!-- Input oculto que abre la cámara -->
+    <!-- Input oculto — acepta multiples archivos -->
     <input
-      ref="cameraInput"
+      ref="fileInput"
       type="file"
       accept="image/*"
-      capture="environment"
+      multiple
       class="d-none"
       @change="onFileChange"
     />
 
-    <!-- Preview de la foto tomada -->
-    <div v-if="preview || modelValue" class="photo-capture__preview mb-2">
-      <img
-        :src="preview ?? modelValue"
-        alt="Foto de la poda"
-        class="photo-capture__img"
-      />
+    <!-- Lista de vistas previas -->
+    <div v-if="files.length" class="photo-capture__grid mb-2">
+      <div
+        v-for="(src, i) in previews"
+        :key="i"
+        class="photo-capture__thumb"
+      >
+        <img :src="src" :alt="`Foto ${i + 1}`" class="photo-capture__img" />
+        <button
+          type="button"
+          class="photo-capture__remove"
+          :disabled="uploading"
+          @click="emit('remove', i)"
+          :title="t('pruning.form.removePhoto')"
+        >
+          &times;
+        </button>
+        <span v-if="uploading" class="photo-capture__badge">
+          <span class="spinner-border spinner-border-sm"></span>
+        </span>
+      </div>
     </div>
 
-    <!-- Botón para abrir cámara -->
+    <!-- Boton agregar -->
     <button
       type="button"
-      class="btn btn-outline-success"
+      class="btn btn-outline-success btn-sm"
       :disabled="uploading"
-      @click="openCamera"
+      @click="openPicker"
     >
-      <span v-if="uploading" class="spinner-border spinner-border-sm me-1"></span>
-      <span v-else">📷</span>
-      {{ uploading ? t('common.loading') : preview ? t('pruning.form.retakePhoto') : t('pruning.form.takePhoto') }}
+      {{ t('pruning.form.addPhoto') }}
     </button>
 
-    <!-- Ruta guardada -->
-    <div v-if="modelValue && !uploading" class="form-text text-success mt-1">
-      ✓ {{ t('pruning.form.photoSaved') }}
-    </div>
+    <span v-if="files.length" class="ms-2 text-muted small">
+      {{ files.length }} {{ files.length === 1 ? t('pruning.form.photoCount1') : t('pruning.form.photoCountN') }}
+      &mdash; {{ t('pruning.form.photosPending') }}
+    </span>
 
   </div>
 </template>
 
 <style scoped>
-.photo-capture__preview {
-  width: 100%;
-  max-width: 320px;
+.photo-capture__grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.photo-capture__thumb {
+  position: relative;
+  width: 90px;
+  height: 90px;
   border-radius: 8px;
   overflow: hidden;
   border: 1px solid #dee2e6;
+  flex-shrink: 0;
 }
 
 .photo-capture__img {
   width: 100%;
-  height: auto;
-  display: block;
+  height: 100%;
   object-fit: cover;
+  display: block;
+}
+
+.photo-capture__remove {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0,0,0,0.55);
+  color: #fff;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.photo-capture__remove:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.photo-capture__badge {
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #fff;
 }
 </style>

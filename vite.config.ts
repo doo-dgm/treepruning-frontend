@@ -19,18 +19,25 @@ export default defineConfig(({ mode }) => {
     server: {
       proxy: {
         '/api': {
-          target: 'https://api-dev.treepruning.org/api/v1',
+          target: env.VITE_API_URL,
           changeOrigin: true,
         },
       },
     },
 
     define: {
-      'self.VITE_FIREBASE_API_KEY':              JSON.stringify(env.VITE_FIREBASE_API_KEY),
-      'self.VITE_FIREBASE_AUTH_DOMAIN':          JSON.stringify(env.VITE_FIREBASE_AUTH_DOMAIN),
-      'self.VITE_FIREBASE_PROJECT_ID':           JSON.stringify(env.VITE_FIREBASE_PROJECT_ID),
-      'self.VITE_FIREBASE_MESSAGING_SENDER_ID':  JSON.stringify(env.VITE_FIREBASE_MESSAGING_SENDER_ID),
-      'self.VITE_FIREBASE_APP_ID':               JSON.stringify(env.VITE_FIREBASE_APP_ID),
+      __VITE_API_URL__:                 JSON.stringify('__VITE_API_URL__'),
+      __VITE_KEYCLOAK_ISSUER_URI__:          JSON.stringify('__VITE_KEYCLOAK_ISSUER_URI__'),
+      __VITE_KEYCLOAK_CLIENT__:              JSON.stringify('__VITE_KEYCLOAK_CLIENT__'),
+      __VITE_FIREBASE_API_KEY__:             JSON.stringify('__VITE_FIREBASE_API_KEY__'),
+      __VITE_FIREBASE_AUTH_DOMAIN__:         JSON.stringify('__VITE_FIREBASE_AUTH_DOMAIN__'),
+      __VITE_FIREBASE_PROJECT_ID__:          JSON.stringify('__VITE_FIREBASE_PROJECT_ID__'),
+      __VITE_FIREBASE_MESSAGING_SENDER_ID__: JSON.stringify('__VITE_FIREBASE_MESSAGING_SENDER_ID__'),
+      __VITE_FIREBASE_APP_ID__:              JSON.stringify('__VITE_FIREBASE_APP_ID__'),
+      __VITE_FIREBASE_VAPID_KEY__:           JSON.stringify('__VITE_FIREBASE_VAPID_KEY__'),
+      __VITE_GOOGLE_MAPS_API_KEY__:          JSON.stringify('__VITE_GOOGLE_MAPS_API_KEY__'),
+      __VITE_RECAPTCHA_SITE_KEY__:           JSON.stringify('__VITE_RECAPTCHA_SITE_KEY__'),
+      __VITE_STRAPI_URL__:                   JSON.stringify('__VITE_STRAPI_URL__'),
     },
   }
 })

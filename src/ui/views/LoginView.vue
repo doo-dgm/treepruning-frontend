@@ -72,7 +72,7 @@ async function handleLogin() {
       </div>
 
       <div class="mb-3">
-        <label for="password" class="form-label">{{ t('auth.password') }}</label>
+        <label for="password" class="form-label">{{ t('auth.passwordLabel') }}</label>
         <input
           id="password"
           v-model="password"

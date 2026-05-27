@@ -1,16 +1,40 @@
-import { ref }                           from 'vue'
+import { ref }                 from 'vue'
+import { i18n }               from '@/infra/i18n'
 import { requestNotificationPermission, onForegroundMessage } from '@/infra/notifications/fcm'
-import { notificationService }           from '@/data/services/notification.service'
+import { showBrowserNotification } from '@/infra/notifications/showBrowserNotification'
+import { notificationService } from '@/data/services/notification.service'
+
+export type NotificationType = 'success' | 'error' | 'warning' | 'info'
 
 export interface AppNotification {
   id:    string
   title: string
   body:  string
   time:  Date
+  type:  NotificationType
 }
 
-const notifications = ref<AppNotification[]>([])
-const fcmToken      = ref<string | null>(null)
+// Estado compartido entre todas las instancias del composable
+const notifications  = ref<AppNotification[]>([])
+const fcmToken       = ref<string | null>(null)
+let   unsubscribeFcm: (() => void) | null = null
+
+const AUTO_DISMISS_MS: Record<NotificationType, number> = {
+  success: 6_000,
+  info:    6_000,
+  warning: 8_000,
+  error:   10_000,   // los errores duran más para que el usuario los lea
+}
+
+export function addNotification(title: string, body: string, type: NotificationType = 'info') {
+  const id = crypto.randomUUID()
+  notifications.value.unshift({ id, title, body, time: new Date(), type })
+  setTimeout(() => dismissNotification(id), AUTO_DISMISS_MS[type])
+}
+
+function dismissNotification(id: string) {
+  notifications.value = notifications.value.filter(n => n.id !== id)
+}
 
 export function useNotifications() {
 
@@ -20,29 +44,42 @@ export function useNotifications() {
 
     fcmToken.value = token
 
-    await notificationService.registerToken(token)
+    const savedLang = localStorage.getItem('tree-pruning-lang')
+    const language  = (savedLang === 'es' || savedLang === 'en')
+      ? savedLang
+      : (i18n.global.locale.value ?? 'es')
 
-    onForegroundMessage((payload) => {
-      const notification: AppNotification = {
-        id:    crypto.randomUUID(),
-        title: payload.notification?.title ?? 'Notificación',
-        body:  payload.notification?.body  ?? '',
-        time:  new Date(),
-      }
-      notifications.value.unshift(notification)
+    try {
+      await notificationService.registerToken(token, language)
+    } catch {
+      return
+    }
+
+    unsubscribeFcm?.()
+    unsubscribeFcm = onForegroundMessage((payload) => {
+
+      const title = payload.notification?.title ?? 'TreePruning'
+      const body  = payload.notification?.body  ?? ''
+      showBrowserNotification(title, body)
     })
   }
 
   async function clearNotifications() {
+    unsubscribeFcm?.()
+    unsubscribeFcm = null
+
     if (fcmToken.value) {
-      await notificationService.unregisterToken(fcmToken.value)
+      try { await notificationService.unregisterToken(fcmToken.value) } catch { /* best-effort */ }
       fcmToken.value = null
     }
     notifications.value = []
   }
 
-  function dismissNotification(id: string) {
-    notifications.value = notifications.value.filter(n => n.id !== id)
+  async function updateTokenLanguage(language: string) {
+    if (!fcmToken.value) return
+    try {
+      await notificationService.registerToken(fcmToken.value, language)
+    } catch {/**/ }
   }
 
   return {
@@ -51,5 +88,7 @@ export function useNotifications() {
     initNotifications,
     clearNotifications,
     dismissNotification,
+    updateTokenLanguage,
+    addLocalNotification: addNotification,
   }
 }

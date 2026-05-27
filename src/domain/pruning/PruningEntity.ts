@@ -51,3 +51,28 @@ export const emptyForm = (): PruningForm => ({
   photographicRecordPath: '',
   observations:           '',
 })
+
+/** Entrada de un arbol en el lote de poda preventiva. */
+export interface SelectedTreeEntry {
+  id:    string
+  label: string
+  lat:   number
+  lng:   number
+}
+
+/** Formulario de programacion de poda preventiva en lote. */
+export interface PreventiveBatchForm {
+  sector:                 string
+  plannedDate:            string
+  quadrille:              string
+  photographicRecordPath: string
+  observations:           string
+}
+
+export const emptyBatchForm = (): PreventiveBatchForm => ({
+  sector:                 '',
+  plannedDate:            '',
+  quadrille:              '',
+  photographicRecordPath: '',
+  observations:           '',
+})

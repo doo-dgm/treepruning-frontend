@@ -6,7 +6,7 @@ ASSETS=/usr/share/nginx/html/assets
 for f in "$ASSETS"/*.js; do
   [ -f "$f" ] || continue
   sed -i \
-    -e "s|__VITE_API_BASE_URL__|${VITE_API_BASE_URL:-}|g" \
+    -e "s|__VITE_API_URL__|${VITE_API_URL:-}|g" \
     -e "s|__VITE_KEYCLOAK_ISSUER_URI__|${VITE_KEYCLOAK_ISSUER_URI:-}|g" \
     -e "s|__VITE_KEYCLOAK_CLIENT__|${VITE_KEYCLOAK_CLIENT:-}|g" \
     -e "s|__VITE_FIREBASE_API_KEY__|${VITE_FIREBASE_API_KEY:-}|g" \
@@ -17,6 +17,7 @@ for f in "$ASSETS"/*.js; do
     -e "s|__VITE_FIREBASE_VAPID_KEY__|${VITE_FIREBASE_VAPID_KEY:-}|g" \
     -e "s|__VITE_RECAPTCHA_SITE_KEY__|${VITE_RECAPTCHA_SITE_KEY:-}|g" \
     -e "s|__VITE_GOOGLE_MAPS_API_KEY__|${VITE_GOOGLE_MAPS_API_KEY:-}|g" \
+    -e "s|__VITE_STRAPI_URL__|${VITE_STRAPI_URL:-}|g" \
     "$f"
 done
 

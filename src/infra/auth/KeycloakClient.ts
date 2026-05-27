@@ -1,15 +1,13 @@
 // src/infra/auth/KeycloakClient.ts
 import { keycloakStorage } from './keycloakStorage'
+import { config } from '@/infra/config'
 
-const KC_ISSUER = import.meta.env.VITE_KEYCLOAK_ISSUER_URI
-const KC_CLIENT = import.meta.env.VITE_KEYCLOAK_CLIENT
-const API_BASE  = import.meta.env.VITE_API_URL
+const KC_ISSUER = config.keycloakIssuerUri
+const KC_CLIENT = config.keycloakClient
 
-// Login va al backend (valida reCAPTCHA + llama a Keycloak internamente)
-const loginEndpoint  = `${API_BASE}/auth/login`
-// Refresh y logout siguen yendo directo a Keycloak
 const tokenEndpoint  = `${KC_ISSUER}/protocol/openid-connect/token`
 const logoutEndpoint = `${KC_ISSUER}/protocol/openid-connect/logout`
+
 
 export interface AuthSession {
   token:        string
@@ -36,45 +34,45 @@ function scheduleRefresh(expiresInSeconds: number) {
 export const keycloakClient = {
 
   async login(credentials: { username: string; password: string; recaptchaToken?: string }): Promise<LoginResult> {
-    let response: Response
-    try {
-      response = await fetch(loginEndpoint, {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          username:       credentials.username,
-          password:       credentials.password,
-          recaptchaToken: credentials.recaptchaToken ?? '',
-        }),
-      })
-    } catch {
-      return { success: false, message: 'Error de conexión. Verifica tu red.' }
-    }
-
-    let body: any
-    try { body = await response.json() } catch { body = null }
+  try {
+    const response = await fetch(`${config.apiBaseUrl}/auth/login`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        username:       credentials.username,
+        password:       credentials.password,
+        recaptchaToken: credentials.recaptchaToken ?? '',
+      }),
+    })
 
     if (!response.ok) {
-      // El backend devuelve ApiResponse<Void> con { status, message, data }
-      const msg = body?.message ?? 'Error de autenticación.'
-      return { success: false, message: msg }
+      let message = 'Error de autenticación.'
+      try {
+        const err = await response.json()
+        message = err.message ?? message
+      } catch { /* ignorar */ }
+      return { success: false, message }
     }
 
-    // El backend devuelve ApiResponse<LoginResponseDTO>:
-    // { status, message, data: { accessToken, refreshToken, expiresIn } }
-    const dto    = body?.data
-    const user   = parseJwt(dto.accessToken)
+    const data = await response.json()
+    const tokenData = data.data   // ← tu ApiResponse wrapper
+
+    const user    = parseJwt(tokenData.accessToken)
     const session: AuthSession = {
-      token:        dto.accessToken,
-      refreshToken: dto.refreshToken,
+      token:        tokenData.accessToken,
+      refreshToken: tokenData.refreshToken,
       user,
     }
 
     keycloakStorage.setTokens(session.token, session.refreshToken, session.user)
-    scheduleRefresh(dto.expiresIn)
+    scheduleRefresh(tokenData.expiresIn)
 
     return { success: true, session }
-  },
+
+  } catch {
+    return { success: false, message: 'Error de conexión.' }
+  }
+},
 
   async logout(): Promise<void> {
     const refreshToken = keycloakStorage.getRefreshToken()

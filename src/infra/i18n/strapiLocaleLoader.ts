@@ -1,15 +1,9 @@
 import axios from 'axios'
 import { i18n } from './index'
+import { config } from '../config'
 
-const STRAPI_URL = (import.meta.env.VITE_STRAPI_URL as string | undefined) ?? ''
+const STRAPI_URL = config.strapiUrl
 
-/**
- * Descarga las traducciones del frontend desde Strapi y las inyecta en vue-i18n.
- *
- * - Se llama en segundo plano tras montar la app (fire-and-forget).
- * - Si Strapi no responde o el env var no está configurado, se usa el fallback estático.
- * - setLocaleMessage es reactivo: la UI se actualiza automáticamente al recibir los textos.
- */
 export async function loadStrapiLocales(): Promise<void> {
   if (!STRAPI_URL) {
     console.info('[i18n] VITE_STRAPI_URL no configurado — usando traducciones estáticas.')

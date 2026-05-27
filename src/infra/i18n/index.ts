@@ -3,8 +3,8 @@ import es from './locales/es'
 import en from './locales/en'
 
 export const i18n = createI18n({
-  legacy:        false,       // usa Composition API
-  locale:        'es',        // idioma por defecto
+  legacy:        false,
+  locale:        'es',
   fallbackLocale: 'en',
   messages:      { es, en },
 })

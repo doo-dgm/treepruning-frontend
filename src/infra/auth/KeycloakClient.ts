@@ -8,6 +8,7 @@ const KC_CLIENT = config.keycloakClient
 const tokenEndpoint  = `${KC_ISSUER}/protocol/openid-connect/token`
 const logoutEndpoint = `${KC_ISSUER}/protocol/openid-connect/logout`
 
+
 export interface AuthSession {
   token:        string
   refreshToken: string

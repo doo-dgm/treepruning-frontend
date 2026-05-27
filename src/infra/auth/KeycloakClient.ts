@@ -3,7 +3,7 @@ import { keycloakStorage } from './keycloakStorage'
 
 const KC_ISSUER = import.meta.env.VITE_KEYCLOAK_ISSUER_URI
 const KC_CLIENT = import.meta.env.VITE_KEYCLOAK_CLIENT
-const API_BASE  = import.meta.env.VITE_API_BASE_URL
+const API_BASE  = import.meta.env.VITE_API_URL
 
 // Login va al backend (valida reCAPTCHA + llama a Keycloak internamente)
 const loginEndpoint  = `${API_BASE}/auth/login`

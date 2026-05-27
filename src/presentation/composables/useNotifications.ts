@@ -44,12 +44,6 @@ export function useNotifications() {
 
     fcmToken.value = token
 
-    // i18n.global es el singleton del módulo — no requiere contexto de componente,
-    // por lo que es seguro llamarlo desde store actions y composables fuera de setup()
-    // Lee el idioma guardado en localStorage (misma clave que Sidebar.vue usa)
-    // para que el token quede registrado con la preferencia real del usuario
-    // incluso en el primer login o después de un refresh de página,
-    // cuando Sidebar.vue todavía no ha ejecutado su onMounted.
     const savedLang = localStorage.getItem('tree-pruning-lang')
     const language  = (savedLang === 'es' || savedLang === 'en')
       ? savedLang
@@ -61,12 +55,9 @@ export function useNotifications() {
       return
     }
 
-    // Cancelar listener anterior (evita duplicados en login/logout/login)
     unsubscribeFcm?.()
     unsubscribeFcm = onForegroundMessage((payload) => {
-      // Cuando la app está en primer plano, Firebase no muestra notificación nativa.
-      // La mostramos manualmente a través del service worker para tener el mismo
-      // comportamiento que en background (notificación del OS, no un toast in-app).
+
       const title = payload.notification?.title ?? 'TreePruning'
       const body  = payload.notification?.body  ?? ''
       showBrowserNotification(title, body)
@@ -84,16 +75,11 @@ export function useNotifications() {
     notifications.value = []
   }
 
-  /** Sincroniza el idioma del token FCM con el nuevo locale del usuario.
-   *  Llamar cada vez que el usuario cambia el idioma en la UI.
-   *  Es un best-effort: si no hay token registrado se ignora silenciosamente. */
   async function updateTokenLanguage(language: string) {
     if (!fcmToken.value) return
     try {
       await notificationService.registerToken(fcmToken.value, language)
-    } catch {
-      /* best-effort — no interrumpir el cambio de idioma por un fallo de red */
-    }
+    } catch {/**/ }
   }
 
   return {
@@ -103,7 +89,6 @@ export function useNotifications() {
     clearNotifications,
     dismissNotification,
     updateTokenLanguage,
-    /** Notificación local inmediata (sin FCM) — útil para confirmaciones y errores */
     addLocalNotification: addNotification,
   }
 }

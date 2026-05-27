@@ -5,9 +5,8 @@ import { useNotifications } from '@/presentation/composables/useNotifications'
 
 const { notifications, dismissNotification } = useNotifications()
 
-// ── Estado del sidebar ────────────────────────────────────────────────────
-const collapsed    = ref(false)   // desktop: solo iconos
-const mobileOpen   = ref(false)   // mobile: drawer visible
+const collapsed    = ref(false)
+const mobileOpen   = ref(false)
 const isMobile     = ref(false)
 
 function checkMobile() {
@@ -31,7 +30,6 @@ function closeMobile()   { mobileOpen.value = false }
 <template>
   <div class="private-layout" :class="{ 'private-layout--collapsed': collapsed && !isMobile }">
 
-    <!-- Top bar — solo visible en mobile -->
     <header v-if="isMobile" class="topbar">
       <button class="topbar__hamburger" aria-label="Abrir menú" @click="openMobile">
         ☰
@@ -39,14 +37,12 @@ function closeMobile()   { mobileOpen.value = false }
       <span class="topbar__title">TreePruning</span>
     </header>
 
-    <!-- Overlay — mobile, cuando el drawer está abierto -->
     <div
       v-if="isMobile && mobileOpen"
       class="sidebar-overlay"
       @click="closeMobile"
     />
 
-    <!-- Sidebar -->
     <Sidebar
       :collapsed="collapsed && !isMobile"
       :open="mobileOpen"
@@ -54,12 +50,10 @@ function closeMobile()   { mobileOpen.value = false }
       @close="closeMobile"
     />
 
-    <!-- Contenido principal -->
     <main class="private-layout__content">
       <router-view />
     </main>
 
-    <!-- Notificaciones push flotantes -->
     <div class="notifications-container">
       <transition-group name="toast">
         <div
@@ -90,7 +84,7 @@ function closeMobile()   { mobileOpen.value = false }
 </template>
 
 <style scoped>
-/* ── Layout base ─────────────────────────────────────────────────────────── */
+
 .private-layout {
   display: flex;
   height: 100vh;
@@ -103,15 +97,13 @@ function closeMobile()   { mobileOpen.value = false }
   padding: 1.5rem;
   background: #f0f2f5;
   transition: margin-left 0.25s ease;
-  min-width: 0; /* evita overflow en flex */
+  min-width: 0;
 }
 
-/* ── Top bar (mobile) ────────────────────────────────────────────────────── */
 .topbar {
   display: none;
 }
 
-/* ── Overlay (mobile) ────────────────────────────────────────────────────── */
 .sidebar-overlay {
   position: fixed;
   inset: 0;
@@ -119,7 +111,6 @@ function closeMobile()   { mobileOpen.value = false }
   z-index: 999;
 }
 
-/* ── Toast container ─────────────────────────────────────────────────────── */
 .notifications-container {
   position: fixed;
   bottom: 1.5rem;

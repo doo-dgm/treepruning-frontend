@@ -68,7 +68,8 @@ export default {
     successMsg:     'Pruning scheduled successfully.',
     noRecords:      'No prunings registered.',
     loadError:      'Error loading data: {message}',
-    scheduleError:  'Error scheduling pruning: {message}',
+    scheduleErrorTitle: 'Error scheduling pruning',
+    scheduleError:      'Error scheduling pruning: {message}',
     form: {
       status:       'Status',
       statusPh:     'Select a status',

@@ -68,7 +68,8 @@ export default {
     successMsg:     'Poda programada exitosamente.',
     noRecords:      'No hay podas registradas.',
     loadError:      'Error al cargar datos: {message}',
-    scheduleError:  'Error al programar poda: {message}',
+    scheduleErrorTitle: 'Error al programar poda',
+    scheduleError:      'Error al programar poda: {message}',
     form: {
       status:       'Estado',
       statusPh:     'Seleccione un estado',

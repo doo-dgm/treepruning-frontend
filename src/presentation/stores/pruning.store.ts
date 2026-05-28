@@ -12,6 +12,7 @@ import { showBrowserNotification } from '@/infra/notifications/showBrowserNotifi
 import { addNotification }         from '@/presentation/composables/useNotifications'
 import { resolveErrorMessage }     from '@/infra/errors/errorMessages'
 import { photoService } from '@/data/services/photo.service'
+import { i18n } from '@/infra/i18n'
 
 import { emptyForm, emptyBatchForm }             from '@/domain/pruning/PruningEntity'
 import type {
@@ -120,9 +121,9 @@ export const usePruningStore = defineStore('pruning', () => {
       await refreshPrunings()
     } catch (err) {
       const raw = err instanceof Error ? err.message : 'Error desconocido'
-      errorMsg.value = `Error al programar poda: ${resolveErrorMessage(raw)}`
-      addNotification('Error al programar poda', resolveErrorMessage(raw), 'error')
-      showBrowserNotification('Error al programar poda', resolveErrorMessage(raw))
+      errorMsg.value = i18n.global.t('pruning.scheduleError', { message: resolveErrorMessage(raw) })
+      addNotification(i18n.global.t('pruning.scheduleErrorTitle'), resolveErrorMessage(raw), 'error')
+      showBrowserNotification(i18n.global.t('pruning.scheduleErrorTitle'), resolveErrorMessage(raw))
     } finally {
       submitting.value = false
     }
@@ -232,8 +233,8 @@ export const usePruningStore = defineStore('pruning', () => {
     } catch (err) {
       const raw = err instanceof Error ? err.message : 'Error desconocido'
       preventiveErrorMsg.value = resolveErrorMessage(raw)
-      addNotification('Error al programar poda', resolveErrorMessage(raw), 'error')
-      showBrowserNotification('Error al programar poda', resolveErrorMessage(raw))
+      addNotification(i18n.global.t('pruning.scheduleErrorTitle'), resolveErrorMessage(raw), 'error')
+      showBrowserNotification(i18n.global.t('pruning.scheduleErrorTitle'), resolveErrorMessage(raw))
     } finally {
       preventiveSubmitting.value = false
     }

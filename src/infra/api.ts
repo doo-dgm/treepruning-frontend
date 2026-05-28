@@ -35,6 +35,11 @@ api.interceptors.request.use(async (reqConfig) => {
       reqConfig.headers.Authorization = `Bearer ${auth.token}`
     }
   }
+
+  // Idioma del usuario → el backend resuelve mensajes de error en este idioma
+  const lang = localStorage.getItem('tree-pruning-lang') ?? 'es'
+  reqConfig.headers['Accept-Language'] = lang
+
   return reqConfig
 })
 

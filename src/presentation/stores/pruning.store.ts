@@ -12,7 +12,6 @@ import { showBrowserNotification } from '@/infra/notifications/showBrowserNotifi
 import { addNotification }         from '@/presentation/composables/useNotifications'
 import { resolveErrorMessage }     from '@/infra/errors/errorMessages'
 import { photoService } from '@/data/services/photo.service'
-import { i18n } from '@/infra/i18n'
 
 import { emptyForm, emptyBatchForm }             from '@/domain/pruning/PruningEntity'
 import type {
@@ -20,13 +19,29 @@ import type {
   PreventiveBatchForm, SelectedTreeEntry,
 } from '@/domain/pruning/PruningEntity'
 
-/** Traduce una clave usando el locale guardado en localStorage. */
-function translate(key: string, params?: Record<string, unknown>): string {
-  const lang = (localStorage.getItem('tree-pruning-lang') ?? 'es') as 'es' | 'en'
-  i18n.global.locale.value = lang
-  return params
-    ? i18n.global.t(key, params)
-    : i18n.global.t(key)
+import esMessages from '@/infra/i18n/locales/es'
+import enMessages from '@/infra/i18n/locales/en'
+
+/**
+ * Resuelve una clave de traduccion (ej. "pruning.scheduleErrorTitle")
+ * usando el locale guardado en localStorage. No depende del estado
+ * del composable useI18n ni de i18n.global, que puede no estar
+ * inicializado cuando se llama desde un store de Pinia.
+ */
+function translate(key: string, params?: Record<string, string>): string {
+  const lang = localStorage.getItem('tree-pruning-lang') ?? 'es'
+  const msgs: Record<string, unknown> = (lang === 'en' ? enMessages : esMessages) as Record<string, unknown>
+
+  // Navegar la ruta "a.b.c" dentro del objeto de mensajes
+  const value = key.split('.').reduce<unknown>((obj, part) => {
+    if (obj && typeof obj === 'object') return (obj as Record<string, unknown>)[part]
+    return undefined
+  }, msgs)
+
+  if (typeof value !== 'string') return key   // fallback: devuelve la clave
+
+  if (!params) return value
+  return value.replace(/\{(\w+)\}/g, (_, k) => params[k] ?? '')
 }
 
 export const usePruningStore = defineStore('pruning', () => {

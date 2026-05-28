@@ -20,6 +20,15 @@ import type {
   PreventiveBatchForm, SelectedTreeEntry,
 } from '@/domain/pruning/PruningEntity'
 
+/** Traduce una clave usando el locale actual (localStorage > i18n global). */
+function t(key: string, params?: Record<string, unknown>): string {
+  const lang = localStorage.getItem('tree-pruning-lang') ?? 'es'
+  i18n.global.locale.value = lang as 'es' | 'en'
+  return params
+    ? i18n.global.t(key, params)
+    : i18n.global.t(key)
+}
+
 export const usePruningStore = defineStore('pruning', () => {
 
   const statuses     = ref<LookupItem[]>([])
@@ -121,9 +130,9 @@ export const usePruningStore = defineStore('pruning', () => {
       await refreshPrunings()
     } catch (err) {
       const raw = err instanceof Error ? err.message : 'Error desconocido'
-      errorMsg.value = i18n.global.t('pruning.scheduleError', { message: resolveErrorMessage(raw) })
-      addNotification(i18n.global.t('pruning.scheduleErrorTitle'), resolveErrorMessage(raw), 'error')
-      showBrowserNotification(i18n.global.t('pruning.scheduleErrorTitle'), resolveErrorMessage(raw))
+      errorMsg.value = t('pruning.scheduleError', { message: resolveErrorMessage(raw) })
+      addNotification(t('pruning.scheduleErrorTitle'), resolveErrorMessage(raw), 'error')
+      showBrowserNotification(t('pruning.scheduleErrorTitle'), resolveErrorMessage(raw))
     } finally {
       submitting.value = false
     }
@@ -233,8 +242,8 @@ export const usePruningStore = defineStore('pruning', () => {
     } catch (err) {
       const raw = err instanceof Error ? err.message : 'Error desconocido'
       preventiveErrorMsg.value = resolveErrorMessage(raw)
-      addNotification(i18n.global.t('pruning.scheduleErrorTitle'), resolveErrorMessage(raw), 'error')
-      showBrowserNotification(i18n.global.t('pruning.scheduleErrorTitle'), resolveErrorMessage(raw))
+      addNotification(t('pruning.scheduleErrorTitle'), resolveErrorMessage(raw), 'error')
+      showBrowserNotification(t('pruning.scheduleErrorTitle'), resolveErrorMessage(raw))
     } finally {
       preventiveSubmitting.value = false
     }
